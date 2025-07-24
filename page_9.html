@@ -1,0 +1,308 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>More clarity. More flow. Less waste.</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {width: 1280px; min-height: 761px; font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;}
+        .slide {
+            width: 1280px;
+            min-height: 761px;
+            position: relative;
+            
+            background-color: #0a1929;
+        }
+        .blueprint-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 1;
+        }
+        .content {
+            position: relative;
+            z-index: 3;
+        }
+        .metric-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .icon-container {
+            background: linear-gradient(135deg, #3a86ff, #00ccff);
+        }
+        .metric-value {
+            background: linear-gradient(90deg, #3a86ff, #00ccff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
+</head>
+<body>
+<div class="slide bg-gradient-to-br from-gray-900 to-blue-900">
+<!-- Blueprint Lines Overlay -->
+<div class="blueprint-lines"></div>
+<!-- Content -->
+<div class="content flex flex-col h-full px-16 py-12">
+<!-- Header -->
+<div class="mb-6">
+<h1 class="text-4xl font-bold text-white">More clarity. More flow. Less waste.</h1>
+<div class="h-1 w-24 bg-gradient-to-r from-blue-500 to-transparent mt-2"></div>
+</div>
+<!-- Introduction -->
+<p class="text-blue-200 text-xl mb-8 max-w-4xl">
+                Lyberty&#39;s impact is measured by the reduction of waste—wasted time, capital, and mental energy. The platform eliminates friction and decision fatigue, allowing builders to reclaim focus for high-leverage activities.
+            </p>
+<!-- Metrics Grid -->
+<div class="grid grid-cols-2 gap-8 flex-grow">
+<!-- Metric 1: Faster Testing -->
+<div class="metric-card rounded-lg p-6 flex flex-col">
+<div class="flex items-start mb-4">
+<div class="icon-container p-3 rounded-full mr-4">
+<i class="fas fa-bolt text-white text-xl"></i>
+</div>
+<h3 class="text-2xl font-semibold text-white">⚡ Faster Creative &amp; Funnel Testing</h3>
+</div>
+<div class="flex-grow flex items-center justify-between">
+<div class="w-1/2">
+<p class="text-blue-200 text-lg">
+<span class="metric-value text-4xl font-bold">10x</span> faster iteration
+                            </p>
+<p class="text-blue-300 text-sm mt-2">
+                                from concept to live testing
+                            </p>
+</div>
+<div class="w-1/2 flex justify-center">
+<div class="h-24 w-full" id="testing-chart"></div>
+</div>
+</div>
+</div>
+<!-- Metric 2: Reduced Acquisition Costs -->
+<div class="metric-card rounded-lg p-6 flex flex-col">
+<div class="flex items-start mb-4">
+<div class="icon-container p-3 rounded-full mr-4">
+<i class="fas fa-chart-line text-white text-xl"></i>
+</div>
+<h3 class="text-2xl font-semibold text-white">💰 Reduced Acquisition Costs</h3>
+</div>
+<div class="flex-grow flex items-center justify-between">
+<div class="w-1/2">
+<p class="text-blue-200 text-lg">
+<span class="metric-value text-4xl font-bold">30-50%</span> reduction in CAC
+                            </p>
+<p class="text-blue-300 text-sm mt-2">
+                                for top use cases
+                            </p>
+</div>
+<div class="w-1/2 flex justify-center">
+<div class="h-24 w-full" id="cac-chart"></div>
+</div>
+</div>
+</div>
+<!-- Metric 3: Fewer Decisions -->
+<div class="metric-card rounded-lg p-6 flex flex-col">
+<div class="flex items-start mb-4">
+<div class="icon-container p-3 rounded-full mr-4">
+<i class="fas fa-brain text-white text-xl"></i>
+</div>
+<h3 class="text-2xl font-semibold text-white">🧠 Fewer Decisions</h3>
+</div>
+<div class="flex-grow flex items-center justify-between">
+<div class="w-1/2">
+<p class="text-blue-200 text-lg">
+<span class="metric-value text-4xl font-bold">80%</span> fewer decisions
+                            </p>
+<p class="text-blue-300 text-sm mt-2">
+                                per week
+                            </p>
+</div>
+<div class="w-1/2 flex justify-center">
+<div class="h-24 w-full" id="decisions-chart"></div>
+</div>
+</div>
+</div>
+<!-- Metric 4: Time Savings -->
+<div class="metric-card rounded-lg p-6 flex flex-col">
+<div class="flex items-start mb-4">
+<div class="icon-container p-3 rounded-full mr-4">
+<i class="fas fa-clock text-white text-xl"></i>
+</div>
+<h3 class="text-2xl font-semibold text-white">🧘‍♂️ Time Savings</h3>
+</div>
+<div class="flex-grow flex items-center justify-between">
+<div class="w-1/2">
+<p class="text-blue-200 text-lg">
+<span class="metric-value text-4xl font-bold">15-20</span> hours saved
+                            </p>
+<p class="text-blue-300 text-sm mt-2">
+                                weekly per operator/founder
+                            </p>
+</div>
+<div class="w-1/2 flex justify-center">
+<div class="h-24 w-full" id="time-chart"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="mt-8 flex justify-between items-center">
+<div class="flex items-center">
+<div class="h-1 w-12 bg-gradient-to-r from-blue-500 to-transparent"></div>
+</div>
+<div class="text-blue-300 text-sm">
+<span>9/14</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+        // D3.js Visualizations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Faster Testing Chart
+            const testingData = [
+                {label: "Before", value: 100, color: "#6c757d"},
+                {label: "After", value: 10, color: "#3a86ff"}
+            ];
+            
+            const testingSvg = d3.select("#testing-chart")
+                .append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("viewBox", "0 0 120 60");
+                
+            testingSvg.selectAll("rect")
+                .data(testingData)
+                .enter()
+                .append("rect")
+                .attr("x", (d, i) => i * 50 + 10)
+                .attr("y", (d) => 60 - d.value * 0.4)
+                .attr("width", 30)
+                .attr("height", (d) => d.value * 0.4)
+                .attr("rx", 3)
+                .attr("fill", d => d.color);
+                
+            testingSvg.selectAll("text")
+                .data(testingData)
+                .enter()
+                .append("text")
+                .attr("x", (d, i) => i * 50 + 25)
+                .attr("y", 55)
+                .attr("text-anchor", "middle")
+                .attr("fill", "white")
+                .attr("font-size", "10px")
+                .text(d => d.label);
+                
+            // CAC Reduction Chart (Gauge)
+            const cacSvg = d3.select("#cac-chart")
+                .append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("viewBox", "0 0 120 60");
+                
+            // Draw gauge background
+            cacSvg.append("path")
+                .attr("d", d3.arc()
+                    .innerRadius(20)
+                    .outerRadius(30)
+                    .startAngle(-Math.PI / 2)
+                    .endAngle(Math.PI / 2)
+                )
+                .attr("transform", "translate(60, 50)")
+                .attr("fill", "#6c757d");
+                
+            // Draw gauge value
+            cacSvg.append("path")
+                .attr("d", d3.arc()
+                    .innerRadius(20)
+                    .outerRadius(30)
+                    .startAngle(-Math.PI / 2)
+                    .endAngle(-Math.PI / 2 + Math.PI * 0.4) // 40% reduction (middle of 30-50%)
+                )
+                .attr("transform", "translate(60, 50)")
+                .attr("fill", "#3a86ff");
+                
+            // Fewer Decisions Chart
+            const decisionsSvg = d3.select("#decisions-chart")
+                .append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("viewBox", "0 0 120 60");
+                
+            // Create decision icons
+            const iconSize = 10;
+            const iconSpacing = 5;
+            const rowCapacity = 10;
+            
+            // Before icons (100%)
+            for (let i = 0; i < 20; i++) {
+                decisionsSvg.append("rect")
+                    .attr("x", i % rowCapacity * (iconSize + iconSpacing) + 10)
+                    .attr("y", Math.floor(i / rowCapacity) * (iconSize + iconSpacing) + 10)
+                    .attr("width", iconSize)
+                    .attr("height", iconSize)
+                    .attr("rx", 2)
+                    .attr("fill", i < 15 ? "#6c757d" : "#3a86ff"); // 80% before, 20% after
+            }
+            
+            // Time Savings Chart
+            const timeSvg = d3.select("#time-chart")
+                .append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("viewBox", "0 0 120 60");
+                
+            // Create clock visualization
+            timeSvg.append("circle")
+                .attr("cx", 60)
+                .attr("cy", 30)
+                .attr("r", 25)
+                .attr("fill", "none")
+                .attr("stroke", "#3a86ff")
+                .attr("stroke-width", 3);
+                
+            // Add clock hands
+            timeSvg.append("line")
+                .attr("x1", 60)
+                .attr("y1", 30)
+                .attr("x2", 60)
+                .attr("y2", 20)
+                .attr("stroke", "#3a86ff")
+                .attr("stroke-width", 2);
+                
+            timeSvg.append("line")
+                .attr("x1", 60)
+                .attr("y1", 30)
+                .attr("x2", 70)
+                .attr("y2", 30)
+                .attr("stroke", "#3a86ff")
+                .attr("stroke-width", 2);
+                
+            // Add time savings indicator
+            timeSvg.append("path")
+                .attr("d", d3.arc()
+                    .innerRadius(15)
+                    .outerRadius(25)
+                    .startAngle(0)
+                    .endAngle(Math.PI * 0.75) // 75% of a quarter (15-20 hours saved)
+                )
+                .attr("transform", "translate(60, 30)")
+                .attr("fill", "#3a86ff");
+        });
+    </script>
+
+</body></html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Built for high-leverage humans.</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {width: 1280px; min-height: 868px; font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;}
+        .slide {
+            width: 1280px;
+            min-height: 868px;
+            position: relative;
+            
+            background-color: #0a1929;
+        }
+        .blueprint-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 1;
+        }
+        .content {
+            position: relative;
+            z-index: 3;
+        }
+        .persona-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        .persona-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .icon-container {
+            background: linear-gradient(135deg, #3a86ff, #00ccff);
+        }
+    </style>
+</head>
+<body>
+<div class="slide bg-gradient-to-br from-gray-900 to-blue-900">
+<!-- Blueprint Lines Overlay -->
+<div class="blueprint-lines"></div>
+<!-- Content -->
+<div class="content flex flex-col h-full px-16 py-12">
+<!-- Header -->
+<div class="mb-6">
+<h1 class="text-4xl font-bold text-white">Built for high-leverage humans.</h1>
+<div class="h-1 w-24 bg-gradient-to-r from-blue-500 to-transparent mt-2"></div>
+</div>
+<!-- Introduction -->
+<div class="flex mb-8">
+<div class="w-3/4">
+<p class="text-blue-200 text-xl">
+                        Lyberty™ is designed for individuals and teams who operate in high-stakes environments and need to translate vision into execution rapidly.
+                    </p>
+</div>
+<div class="w-1/4 flex justify-end">
+<img alt=" diverse personas" class="h-24 rounded-lg opacity-80" src="https://picture-search.skywork.ai/aippt/image/sheet/eec82dc4ecce560d9215fee7d2ac8a7f.jpg" data-sk-source-container="img" data-sk-source-url="https://stock.adobe.com/search?k=business+avatar" data-sk-source-id="1948181357634457605"/>
+</div>
+</div>
+<!-- Personas Grid -->
+<div class="grid grid-cols-2 gap-8 flex-grow">
+<!-- Persona 1: Founders -->
+<div class="persona-card rounded-lg p-6 flex">
+<div class="icon-container p-4 rounded-full h-16 w-16 flex items-center justify-center mr-4 self-start">
+<i class="fas fa-rocket text-white text-xl"></i>
+</div>
+<div>
+<h3 class="text-2xl font-semibold text-white mb-2">Founders building fast-moving companies</h3>
+<p class="text-blue-200">
+                            Early-stage entrepreneurs managing multiple roles from marketing to sales and operations. Lyberty™ consolidates the growth stack and automates strategic and operational loops so founders can focus on product, vision, and fundraising.
+                        </p>
+</div>
+</div>
+<!-- Persona 2: Operators -->
+<div class="persona-card rounded-lg p-6 flex">
+<div class="icon-container p-4 rounded-full h-16 w-16 flex items-center justify-center mr-4 self-start">
+<i class="fas fa-cogs text-white text-xl"></i>
+</div>
+<div>
+<h3 class="text-2xl font-semibold text-white mb-2">Operators managing complex GTM systems</h3>
+<p class="text-blue-200">
+                            Go-to-market operators bogged down by disconnected tools and chaotic attribution. Lyberty™ provides a single source of truth, streamlining GTM strategy, execution, and optimization to reduce complexity and decision fatigue.
+                        </p>
+</div>
+</div>
+<!-- Persona 3: Agencies -->
+<div class="persona-card rounded-lg p-6 flex">
+<div class="icon-container p-4 rounded-full h-16 w-16 flex items-center justify-center mr-4 self-start">
+<i class="fas fa-briefcase text-white text-xl"></i>
+</div>
+<div>
+<h3 class="text-2xl font-semibold text-white mb-2">Agencies serving multiple verticals</h3>
+<p class="text-blue-200">
+                            Marketing and growth agencies managing diverse client portfolios, each with its own tech stack. Lyberty™ offers a standardized, powerful operating system that allows agencies to deliver faster results and scale their services.
+                        </p>
+</div>
+</div>
+<!-- Persona 4: Creators -->
+<div class="persona-card rounded-lg p-6 flex">
+<div class="icon-container p-4 rounded-full h-16 w-16 flex items-center justify-center mr-4 self-start">
+<i class="fas fa-paint-brush text-white text-xl"></i>
+</div>
+<div>
+<h3 class="text-2xl font-semibold text-white mb-2">Creators scaling digital products or coaching</h3>
+<p class="text-blue-200">
+                            Creators expanding into digital products, courses, or coaching who face challenges building funnels without a dedicated growth team. Lyberty™ automates the entire process, enabling creators to scale their offerings effectively.
+                        </p>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="mt-8 flex justify-between items-center">
+<div class="flex items-center">
+<div class="h-1 w-12 bg-gradient-to-r from-blue-500 to-transparent"></div>
+</div>
+<div class="text-blue-300 text-sm">
+<span>7/14</span>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>

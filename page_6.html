@@ -1,0 +1,156 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>From idea to scale in 3 steps.</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {width: 1280px; min-height: 720px; font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;}
+        .slide {
+            width: 1280px;
+            min-height: 720px;
+            position: relative;
+            
+            background-color: #0a1929;
+        }
+        .blueprint-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 1;
+        }
+        .content {
+            position: relative;
+            z-index: 3;
+        }
+        .step-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .icon-container {
+            background: linear-gradient(135deg, #3a86ff, #00ccff);
+        }
+        .flow-arrow {
+            color: rgba(58, 134, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+<div class="slide bg-gradient-to-br from-gray-900 to-blue-900">
+<!-- Blueprint Lines Overlay -->
+<div class="blueprint-lines"></div>
+<!-- Content -->
+<div class="content flex flex-col h-full px-16 py-12">
+<!-- Header -->
+<div class="mb-6">
+<h1 class="text-4xl font-bold text-white">From idea to scale in 4 steps.</h1>
+<div class="h-1 w-24 bg-gradient-to-r from-blue-500 to-transparent mt-2"></div>
+</div>
+<!-- Introduction -->
+<p class="text-blue-200 text-xl mb-8 max-w-4xl">
+                Lyberty transforms your vision into action through a seamless, four-step process that automates the entire growth lifecycle.
+            </p>
+<!-- Process Flow -->
+<div class="flex flex-col space-y-8 flex-grow">
+<!-- Process Steps -->
+<div class="flex justify-between items-start">
+<!-- Step 1: Feed -->
+<div class="step-card rounded-lg p-6 w-1/4">
+<div class="flex items-center justify-center mb-4">
+<div class="icon-container p-4 rounded-full">
+<i class="fas fa-lightbulb text-white text-2xl"></i>
+</div>
+</div>
+<h3 class="text-2xl font-semibold text-white text-center mb-3">1. Feed</h3>
+<p class="text-blue-200 text-center">
+                            Input your product, offer, or high-level business goal as the foundation for AI strategy generation.
+                        </p>
+</div>
+<!-- Flow Arrow 1 -->
+<div class="flow-arrow flex items-center mt-12">
+<i class="fas fa-chevron-right text-2xl"></i>
+</div>
+<!-- Step 2: Generate -->
+<div class="step-card rounded-lg p-6 w-1/4">
+<div class="flex items-center justify-center mb-4">
+<div class="icon-container p-4 rounded-full">
+<i class="fas fa-sitemap text-white text-2xl"></i>
+</div>
+</div>
+<h3 class="text-2xl font-semibold text-white text-center mb-3">2. Generate</h3>
+<p class="text-blue-200 text-center">
+                            AI maps out complete go-to-market strategy, including sales funnel, marketing angles, and creative assets.
+                        </p>
+</div>
+<!-- Flow Arrow 2 -->
+<div class="flow-arrow flex items-center mt-12">
+<i class="fas fa-chevron-right text-2xl"></i>
+</div>
+<!-- Step 3: Execute -->
+<div class="step-card rounded-lg p-6 w-1/4">
+<div class="flex items-center justify-center mb-4">
+<div class="icon-container p-4 rounded-full">
+<i class="fas fa-rocket text-white text-2xl"></i>
+</div>
+</div>
+<h3 class="text-2xl font-semibold text-white text-center mb-3">3. Execute</h3>
+<p class="text-blue-200 text-center">
+                            One-click deployment across integrated marketing channels like Meta, TikTok, and email.
+                        </p>
+</div>
+<!-- Flow Arrow 3 -->
+<div class="flow-arrow flex items-center mt-12">
+<i class="fas fa-chevron-right text-2xl"></i>
+</div>
+<!-- Step 4: Optimize -->
+<div class="step-card rounded-lg p-6 w-1/4">
+<div class="flex items-center justify-center mb-4">
+<div class="icon-container p-4 rounded-full">
+<i class="fas fa-chart-line text-white text-2xl"></i>
+</div>
+</div>
+<h3 class="text-2xl font-semibold text-white text-center mb-3">4. Optimize</h3>
+<p class="text-blue-200 text-center">
+                            Real-time tracking of CAC, LTV, and cohort performance metrics with automatic optimization.
+                        </p>
+</div>
+</div>
+<!-- Circular Process Indicator -->
+<div class="flex justify-center mt-6">
+<div class="flex items-center">
+<div class="w-16 h-16 rounded-full border-2 border-blue-400 flex items-center justify-center">
+<i class="fas fa-sync-alt text-blue-400 text-xl"></i>
+</div>
+<div class="ml-4 text-blue-300 max-w-md">
+<p class="text-lg">The process continuously iterates, allowing for rapid adaptation and optimization of your go-to-market strategy.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="mt-8 flex justify-between items-center">
+<div class="flex items-center">
+<div class="h-1 w-12 bg-gradient-to-r from-blue-500 to-transparent"></div>
+</div>
+<div class="text-blue-300 text-sm">
+<span>6/14</span>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>

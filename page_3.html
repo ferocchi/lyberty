@@ -1,0 +1,163 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>We didn&#39;t start companies to stare at dashboards.</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {width: 1280px; min-height: 786px; font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;}
+        .slide {
+            width: 1280px;
+            min-height: 786px;
+            position: relative;
+            
+            background-color: #0a1929;
+        }
+        .blueprint-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 1;
+        }
+        .content {
+            position: relative;
+            z-index: 3;
+        }
+        .aspiration-card {
+            background: rgba(74, 222, 128, 0.05);
+            border: 1px solid rgba(74, 222, 128, 0.1);
+            backdrop-filter: blur(5px);
+        }
+        .reality-card {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.1);
+            backdrop-filter: blur(5px);
+        }
+        .icon-container-aspiration {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+        }
+        .icon-container-reality {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .divider {
+            position: relative;
+        }
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-50%);
+        }
+        .dashboard-image {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+<div class="slide bg-gradient-to-br from-gray-900 to-blue-900">
+<!-- Blueprint Lines Overlay -->
+<div class="blueprint-lines"></div>
+<!-- Content -->
+<div class="content flex flex-col h-full px-16 py-12">
+<!-- Header -->
+<div class="mb-6">
+<h1 class="text-4xl font-bold text-white">We didn&#39;t start companies to stare at dashboards.</h1>
+<div class="h-1 w-24 bg-gradient-to-r from-blue-500 to-transparent mt-2"></div>
+</div>
+<!-- Introduction -->
+<p class="text-blue-200 text-xl mb-8 max-w-4xl">
+                The entrepreneurial journey is driven by a desire for creation, connection, and autonomy. 
+                Instead, founders are drowning in operational complexity, replaced by the drudgery of managing dashboards and reconciling data.
+            </p>
+<!-- Split Content -->
+<div class="flex flex-grow gap-8">
+<!-- Left Side: What We Wanted -->
+<div class="w-1/2 flex flex-col">
+<h2 class="text-2xl font-semibold text-green-400 mb-4">What We Wanted</h2>
+<div class="aspiration-card rounded-lg p-6 mb-4 flex items-start">
+<div class="icon-container-aspiration p-3 rounded-full mr-4 flex-shrink-0">
+<i class="fas fa-impact text-white text-xl"></i>
+</div>
+<div>
+<h3 class="text-xl font-semibold text-white mb-2">Build Impactful Products</h3>
+<p class="text-green-200">Create meaningful solutions that transform lives</p>
+</div>
+</div>
+<div class="aspiration-card rounded-lg p-6 mb-4 flex items-start">
+<div class="icon-container-aspiration p-3 rounded-full mr-4 flex-shrink-0">
+<i class="fas fa-users text-white text-xl"></i>
+</div>
+<div>
+<h3 class="text-xl font-semibold text-white mb-2">Connect with Customers</h3>
+<p class="text-green-200">Build authentic relationships and community</p>
+</div>
+</div>
+<div class="aspiration-card rounded-lg p-6 flex items-start">
+<div class="icon-container-aspiration p-3 rounded-full mr-4 flex-shrink-0">
+<i class="fas fa-lightbulb text-white text-xl"></i>
+</div>
+<div>
+<h3 class="text-xl font-semibold text-white mb-2">Creative Freedom</h3>
+<p class="text-green-200">Experience the joy of creation and innovation</p>
+</div>
+</div>
+</div>
+<!-- Right Side: What We Got -->
+<div class="w-1/2 flex flex-col">
+<h2 class="text-2xl font-semibold text-red-400 mb-4">What We Got</h2>
+<div class="reality-card rounded-lg p-6 mb-4 flex items-start">
+<div class="icon-container-reality p-3 rounded-full mr-4 flex-shrink-0">
+<i class="fas fa-chart-line text-white text-xl"></i>
+</div>
+<div>
+<h3 class="text-xl font-semibold text-white mb-2">Drowned in Noise</h3>
+<p class="text-red-200">Overwhelmed by operational complexity</p>
+</div>
+</div>
+<div class="reality-card rounded-lg p-6 mb-4 flex items-start">
+<div class="icon-container-reality p-3 rounded-full mr-4 flex-shrink-0">
+<i class="fas fa-puzzle-piece text-white text-xl"></i>
+</div>
+<div>
+<h3 class="text-xl font-semibold text-white mb-2">Disconnected Tools</h3>
+<p class="text-red-200">Fragmented ecosystem forcing manual integration</p>
+</div>
+</div>
+<div class="reality-card rounded-lg p-6 flex items-center">
+<div class="icon-container-reality p-3 rounded-full mr-4 flex-shrink-0">
+<i class="fas fa-exclamation-triangle text-white text-xl"></i>
+</div>
+<div class="flex-grow">
+<h3 class="text-xl font-semibold text-white mb-2">Dashboard Overwhelm</h3>
+<p class="text-red-200">Bloated, confusing interfaces obscuring insights</p>
+</div>
+<img alt="Dashboard overwhelm" class="dashboard-image h-24 w-40 object-cover ml-4" src="https://picture-search.skywork.ai/aippt/image/sheet/0b505877b0b6f9705ba63b9b246b128f.jpg" data-sk-source-container="img" data-sk-source-url="https://www.howtogeek.com/how-the-chromebox-missed-the-mini-pc-revolution/" data-sk-source-id="1948181357672206337"/>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="mt-8 flex justify-between items-center">
+<div class="flex items-center">
+<div class="h-1 w-12 bg-gradient-to-r from-blue-500 to-transparent"></div>
+</div>
+<div class="text-blue-300 text-sm">
+<span>3/14</span>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>

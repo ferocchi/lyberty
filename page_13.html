@@ -1,0 +1,163 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>We built Lyberty to reclaim our own freedom.</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {width: 1280px; min-height: 846px; font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;}
+        .slide {
+            width: 1280px;
+            min-height: 846px;
+            position: relative;
+            
+            background-color: #0a1929;
+        }
+        .blueprint-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 1;
+        }
+        .content {
+            position: relative;
+            z-index: 3;
+        }
+        .journey-line {
+            position: relative;
+            height: 4px;
+            background: linear-gradient(90deg, #3a86ff, #00ccff);
+        }
+        .journey-point {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3a86ff, #00ccff);
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid white;
+            box-shadow: 0 0 15px rgba(58, 134, 255, 0.5);
+        }
+        .journey-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        .journey-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .quote-card {
+            background: rgba(58, 134, 255, 0.1);
+            border-left: 4px solid #3a86ff;
+        }
+    </style>
+</head>
+<body>
+<div class="slide bg-gradient-to-br from-gray-900 to-blue-900">
+<!-- Blueprint Lines Overlay -->
+<div class="blueprint-lines"></div>
+<!-- Content -->
+<div class="content flex flex-col h-full px-16 py-12">
+<!-- Header -->
+<div class="mb-6">
+<h1 class="text-4xl font-bold text-white">We built Lyberty to reclaim our own freedom.</h1>
+<div class="h-1 w-24 bg-gradient-to-r from-blue-500 to-transparent mt-2"></div>
+</div>
+<!-- Introduction -->
+<p class="text-blue-200 text-xl mb-8 max-w-4xl">
+                After years of building across funnels, brands, and growth teams, we discovered a better way.
+            </p>
+<!-- Journey Timeline -->
+<div class="relative my-8">
+<div class="journey-line w-full"></div>
+<div class="journey-point" style="left: 10%"></div>
+<div class="journey-point" style="left: 40%"></div>
+<div class="journey-point" style="left: 70%"></div>
+<div class="journey-point" style="left: 95%"></div>
+</div>
+<!-- Journey Cards -->
+<div class="grid grid-cols-3 gap-6 mb-8">
+<!-- Experience Card -->
+<div class="journey-card rounded-lg p-6">
+<div class="flex items-center mb-4">
+<div class="bg-blue-500 p-3 rounded-full mr-4">
+<i class="fas fa-chart-line text-white text-xl"></i>
+</div>
+<h3 class="text-xl font-semibold text-white">10 Years of Experience</h3>
+</div>
+<p class="text-blue-200 text-base">
+                        Built across funnels, brands, and growth teams. Scaled clients to 8-9 figures, facing the same bottlenecks.
+                    </p>
+</div>
+<!-- Pain Points Card -->
+<div class="journey-card rounded-lg p-6">
+<div class="flex items-center mb-4">
+<div class="bg-blue-500 p-3 rounded-full mr-4">
+<i class="fas fa-exclamation-triangle text-white text-xl"></i>
+</div>
+<h3 class="text-xl font-semibold text-white">Our Own Pain</h3>
+</div>
+<p class="text-blue-200 text-base">
+                        Complexity, tech debt, and overthinking held us back. We needed a solution that would free us from operational constraints.
+                    </p>
+</div>
+<!-- Solution Card -->
+<div class="journey-card rounded-lg p-6">
+<div class="flex items-center mb-4">
+<div class="bg-blue-500 p-3 rounded-full mr-4">
+<i class="fas fa-lightbulb text-white text-xl"></i>
+</div>
+<h3 class="text-xl font-semibold text-white">Lyberty Emerged</h3>
+</div>
+<p class="text-blue-200 text-base">
+                        We built Lyberty to solve our own pain. Now it&#39;s yours.
+                    </p>
+</div>
+</div>
+<!-- Quote -->
+<div class="quote-card p-6 rounded-lg mb-8 max-w-4xl mx-auto">
+<div class="flex">
+<div class="text-4xl text-blue-400 mr-4">
+<i class="fas fa-quote-left"></i>
+</div>
+<div>
+<p class="text-blue-100 text-xl italic mb-3">
+                            &#34;You&#39;ve spent 10 years building across funnels, brands, and growth teams. You&#39;ve scaled clients to 8–9 figures—but always hit the same bottlenecks: complexity, tech debt, overthinking.&#34;
+                        </p>
+<p class="text-blue-300 text-right">
+                            - The Lyberty Team
+                        </p>
+</div>
+</div>
+</div>
+<!-- Freedom Concept -->
+<div class="flex items-center justify-center mt-auto">
+<div class="flex items-center bg-gradient-to-r from-blue-900 to-transparent px-6 py-3 rounded-lg">
+<i class="fas fa-rocket text-blue-400 text-2xl mr-4"></i>
+<p class="text-white text-lg font-semibold">Reclaim your freedom.</p>
+</div>
+</div>
+<!-- Footer -->
+<div class="mt-6 flex justify-between items-center">
+<div class="flex items-center">
+<div class="h-1 w-12 bg-gradient-to-r from-blue-500 to-transparent"></div>
+</div>
+<div class="text-blue-300 text-sm">
+<span>13/14</span>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>
