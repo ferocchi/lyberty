@@ -1,4 +1,4 @@
-# Lyberty™ - The AI Engine for Builders Who Think Bigger
+# Lyberty™ - The AI Venture Engine for Builders Who Think Bigger
 
 A unified presentation showcasing Lyberty's vision for automating venture building and amplifying human potential.
 

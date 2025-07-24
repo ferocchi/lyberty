@@ -1,1 +1,86 @@
-lyberty.ai 
+lyberty.ai
+
+1. **`index.html`** - A single-page application that combines all 14 slides with:
+
+   - Smooth navigation between slides
+   - Interactive navigation dots on the right side
+   - Arrow controls at the bottom
+   - Keyboard support (arrow keys, spacebar)
+   - Touch/swipe support for mobile devices
+   - Responsive design that works on all screen sizes
+   - Unified styling with the beautiful blueprint overlay effect
+
+2. **`README.md`** - Comprehensive deployment guide with:
+
+   - Step-by-step GitHub Pages setup
+   - Detailed Namecheap custom domain configuration
+   - DNS settings and troubleshooting tips
+
+3. **`CNAME`** - Template file for custom domain setup
+
+## 🚀 Next Steps - Deploy to GitHub Pages:
+
+### Step 1: Create GitHub Repository
+
+1. Go to [GitHub.com](https://github.com) and sign in
+2. Click the "+" icon → "New repository"
+3. Name it (e.g., `lyberty`)
+4. Make it **Public** (required for free GitHub Pages)
+5. Click "Create repository"
+
+### Step 2: Upload Your Files
+
+1. In your new repository, click "uploading an existing file"
+2. Upload the `index.html`, `README.md`, and `CNAME` files
+3. Commit the changes
+
+### Step 3: Enable GitHub Pages
+
+1. Go to repository **Settings** → **Pages**
+2. Select "Deploy from a branch" → **main** branch → **root** folder
+3. Click **Save**
+4. Your site will be live at `https://yourusername.github.io/repository-name`
+
+## 🌐 Setting Up Custom Domain on Namecheap:
+
+### Step 1: Purchase Domain
+
+1. Go to [Namecheap.com](https://namecheap.com)
+2. Search and purchase your desired domain
+
+### Step 2: Configure DNS (in Namecheap)
+
+1. Go to **Domain List** → **Manage** → **Advanced DNS**
+2. Add these A records for your apex domain:
+   ```
+   Type: A, Host: @, Value: 185.199.108.153
+   Type: A, Host: @, Value: 185.199.109.153
+   Type: A, Host: @, Value: 185.199.110.153
+   Type: A, Host: @, Value: 185.199.111.153
+   ```
+3. Add CNAME record for www:
+   ```
+   Type: CNAME, Host: www, Value: yourusername.github.io
+   ```
+
+### Step 3: Configure GitHub
+
+1. In your GitHub repository → **Settings** → **Pages**
+2. Enter your domain in "Custom domain" field
+3. Check "Enforce HTTPS"
+4. Update the `CNAME` file with your actual domain name
+
+### Step 4: Wait for Propagation
+
+- DNS changes can take up to 24 hours to propagate
+- Test your domain: `https://yourdomain.com`
+
+## 🎯 Key Features of Your Unified Presentation:
+
+- **Professional Navigation**: Dots on the right, arrows at bottom
+- **Keyboard Shortcuts**: Arrow keys and spacebar for easy navigation
+- **Mobile Optimized**: Touch gestures and responsive design
+- **Beautiful Animations**: Smooth transitions and hover effects
+- **Consistent Branding**: Unified Lyberty™ styling throughout
+
+The presentation is now ready to deploy! Would you like me to help you with any specific part of the deployment process or make any adjustments to the presentation?
