@@ -1,0 +1,525 @@
+---
+alwaysApply: false
+---
+
+# Business Logic & Optimization Algorithms
+
+## Core Business Domain
+
+This application is a comprehensive tracking and experimentation platform that enables businesses to optimize their digital marketing funnels through real-time data collection, A/B testing, and intelligent traffic routing. The platform focuses on conversion optimization through systematic experimentation and data-driven decision making.
+
+## Key Business Capabilities
+
+### 1. Real-Time Event Tracking
+
+- **Multi-Source Data Collection**: Website, mobile app, and API event tracking
+- **Real-Time Processing**: Live event processing with sub-second latency
+- **Data Quality Monitoring**: Automated violation detection and alerting
+- **Privacy Compliance**: GDPR and CCPA compliant data handling
+
+### 2. A/B Testing & Experimentation
+
+- **Multi-Variant Testing**: Support for unlimited test variants
+- **Traffic Allocation**: Precise percentage-based traffic distribution
+- **Feature Flag Integration**: Dynamic feature toggling for experiments
+- **Statistical Significance**: Automated significance testing and monitoring
+
+### 3. Smart Traffic Routing
+
+- **URL Rotator**: Intelligent traffic distribution across landing pages
+- **Conditional Routing**: Rule-based traffic allocation
+- **Performance Optimization**: Real-time performance-based routing
+- **Conversion Tracking**: End-to-end conversion attribution
+
+### 4. Funnel Optimization
+
+- **Conversion Funnel Analysis**: Multi-step funnel tracking and optimization
+- **Bottleneck Identification**: Automated detection of conversion drop-offs
+- **A/B Testing Integration**: Experimentation within funnel steps
+- **Performance Metrics**: Real-time funnel performance monitoring
+
+## Data Models & Architecture
+
+### Experiment Management
+
+```typescript
+// [src/server/db/schema.ts](mdc:src/server/db/schema.ts)
+interface Experiment {
+  id: string;
+  name: string;
+  description: string;
+  status: "draft" | "running" | "ended";
+  allocation: number; // Traffic allocation percentage
+  filters: Filter[]; // Targeting criteria
+  enablePageExperiment: boolean; // Page-level experimentation
+  results: object; // Statistical results
+  companyId: string;
+}
+
+interface ExperimentVariant {
+  id: string;
+  name: string;
+  url: string;
+  weight: number; // Traffic weight (0-100)
+  experimentId: string;
+  flags: FeatureFlag[]; // Feature flag associations
+}
+```
+
+### Tracking & Analytics
+
+```typescript
+// [src/types/tracking.ts](mdc:src/types/tracking.ts)
+interface Event {
+  id: string;
+  name: string;
+  companyId: string;
+  pseudoId: string;
+  sessionId: string;
+  pageInstanceId: string;
+  parameters: string;
+  timestamp: string;
+  // Device and browser information
+  deviceBrand: string;
+  deviceModel: string;
+  deviceType: string;
+  browser: string;
+  // Page and referrer data
+  pageHref: string;
+  pageHostname: string;
+  pagePathname: string;
+  referrerHref: string;
+  // Geographic data
+  city: string;
+  region: string;
+  country: string;
+  // UTM parameters
+  utmCampaign: string;
+  utmSource: string;
+  utmMedium: string;
+  utmContent: string;
+  utmTerm: string;
+  // Experiment tracking
+  hotLinkSlug: string;
+  pathwayId: string;
+}
+
+interface Source {
+  id: string;
+  name: string;
+  type: "sdk_website" | "api" | "mobile";
+  deliveryMode: "client" | "server";
+  hostname: string;
+  schema: SourceSchema;
+  status: "draft" | "active" | "paused";
+  companyId: string;
+}
+
+interface Destination {
+  id: string;
+  platform: string; // "google-analytics", "facebook", "tiktok"
+  pixelId: string;
+  mappings: object;
+  filters: Filter[];
+  companyId: string;
+}
+```
+
+### Funnel Management
+
+```typescript
+// [src/types/funnel.ts](mdc:src/types/funnel.ts)
+interface Funnel {
+  id: string;
+  name: string;
+  description: string;
+  companyId: string;
+  steps: FunnelStep[];
+}
+
+interface FunnelStep {
+  id: string;
+  name: string;
+  conditions: Condition[][]; // AND/OR logic for step completion
+  constraint: {
+    prevStepId: string;
+    type: "direct" | "indirect";
+    time: number | null;
+  };
+}
+
+interface Condition {
+  pageUrl: string;
+  conversionEvent: string;
+  filters: Filter[];
+}
+```
+
+## Optimization Algorithms
+
+### 1. Traffic Allocation Algorithm
+
+```typescript
+// [src/server/actions/experimentVariant.ts](mdc:src/server/actions/experimentVariant.ts)
+export async function editExperimentVariants(
+  data: ExperimentVariantWithFlags[]
+) {
+  // Validate total weight equals 100%
+  const totalPercentage = data.reduce(
+    (acc, variant) => acc + variant.weight,
+    0
+  );
+  if (totalPercentage !== 100) {
+    return { status: "error", message: "Total weight should be 100" };
+  }
+
+  // Update variant weights and configurations
+  await Promise.all(
+    data.map(async (variant) => {
+      await db
+        .update(experimentVariant)
+        .set({ weight: variant.weight, url: variant.url })
+        .where(eq(experimentVariant.id, variant.id));
+    })
+  );
+}
+```
+
+### 2. Real-Time Event Processing
+
+```typescript
+// [src/server/actions/tracking.ts](mdc:src/server/actions/tracking.ts)
+const getCachedSourcesMetrics = unstable_cache(
+  async (companyId: string) => {
+    const events = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(event)
+      .where(
+        and(
+          eq(event.companyId, companyId),
+          gte(event.timestamp, new Date(Date.now() - 1000 * 60 * 60 * 24))
+        )
+      );
+
+    return { status: "success", events };
+  },
+  ["sources-metrics"],
+  { tags: ["sources-metrics"], revalidate: 120 }
+);
+```
+
+### 3. Smart URL Routing
+
+```typescript
+// [src/server/actions/rotator.ts](mdc:src/server/actions/rotator.ts)
+export async function updateHotLinksKV(companyId: string) {
+  const hotLinks = await db.query.hotLink.findMany({
+    with: {
+      hotLinkToPathway: {
+        with: {
+          pathway: {
+            with: {
+              experiment: true,
+              pathwayToFlag: {
+                with: {
+                  flag: {
+                    with: { feature: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    where: eq(hotLink.companyId, companyId),
+  });
+
+  // Build KV store for real-time routing decisions
+  let kvValue = {};
+  for (const hotLink of hotLinks) {
+    // Process pathways and experiments for routing logic
+  }
+}
+```
+
+### 4. Data Quality Monitoring
+
+```typescript
+// [src/server/actions/tracking.ts](mdc:src/server/actions/tracking.ts)
+export async function getViolations() {
+  const companyViolations = await db
+    .select()
+    .from(violations)
+    .where(
+      and(
+        eq(violations.companyId, companyId),
+        or(
+          eq(violations.violationType, "missing_source"),
+          eq(violations.violationType, "inexistent_source")
+        )
+      )
+    )
+    .orderBy(desc(violations.createdAt));
+
+  return { status: "success", companyViolations };
+}
+```
+
+## Business Logic Patterns
+
+### 1. Multi-Tenant Data Isolation
+
+All business logic enforces company-based data isolation:
+
+```typescript
+// [src/server/actions/auth.ts](mdc:src/server/actions/auth.ts)
+const session = await auth();
+const companyId = session.company.id;
+
+// All queries include company filtering
+const data = await db.query.experiment.findMany({
+  where: eq(experiment.companyId, companyId),
+});
+```
+
+### 2. Caching Strategy
+
+Intelligent caching for performance optimization:
+
+```typescript
+// [src/server/actions/tracking.ts](mdc:src/server/actions/tracking.ts)
+const getCachedSources = unstable_cache(
+  async (companyId: string) => {
+    const sourcesResult = await db
+      .select()
+      .from(sources)
+      .where(eq(sources.companyId, companyId));
+    return sourcesResult as DbSource[];
+  },
+  ["sources"],
+  { tags: ["sources"], revalidate: 120 }
+);
+```
+
+### 3. Real-Time KV Updates
+
+Cloudflare KV integration for real-time configuration:
+
+```typescript
+// [src/server/actions/experimentVariant.ts](mdc:src/server/actions/experimentVariant.ts)
+export async function updatePageExperimentKv({
+  companyId,
+}: {
+  companyId: string;
+}) {
+  const experiments = await db.query.experiment.findMany({
+    with: {
+      experimentVariant: {
+        with: {
+          experimentVariantToFlag: {
+            with: { flag: { with: { feature: true } } },
+          },
+        },
+      },
+    },
+    where: and(
+      eq(experiment.companyId, companyId),
+      eq(experiment.enablePageExperiment, true)
+    ),
+  });
+
+  // Build experiment configuration for KV store
+  let kvValue = {};
+  experiments.forEach((experiment) => {
+    const newVariants = experiment.experimentVariant.map((variant) => ({
+      id: variant.id,
+      name: variant.name,
+      weight: variant.weight,
+      url: variant.url,
+      flags: variant.experimentVariantToFlag
+        .map((e) => ({
+          [e.flag.feature.name]: e.flag.value,
+        }))
+        .reduce((acc, obj) => Object.assign(acc, obj), {}),
+    }));
+
+    const url = newVariants[0].url;
+    if (url) {
+      kvValue[url] = {
+        id: experiment.id,
+        filters: experiment.filters,
+        allocation: experiment.allocation,
+        variants: newVariants,
+      };
+    }
+  });
+
+  // Update Cloudflare KV store
+  await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces/${process.env.CLOUDFLARE_KV_PAGE_EXPERIMENTS_NAMESPACE}/values/${companyId}`,
+    {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
+      body: JSON.stringify(kvValue),
+    }
+  );
+}
+```
+
+## Key Metrics & KPIs
+
+### 1. Experiment Performance Metrics
+
+- **Traffic Allocation**: Percentage of traffic assigned to each variant
+- **Conversion Rate**: Variant-specific conversion performance
+- **Statistical Significance**: P-value and confidence intervals
+- **Sample Size**: Number of users in each variant
+- **Duration**: Time since experiment start
+
+### 2. Tracking Performance Metrics
+
+- **Events Processed**: Total events received and processed
+- **Events Delivered**: Successful deliveries to destinations
+- **Events Blocked**: Events filtered or blocked by rules
+- **Average Lag**: Processing time for event delivery
+- **Error Rate**: Failed event processing percentage
+
+### 3. Funnel Performance Metrics
+
+- **Step Conversion Rates**: Conversion between funnel steps
+- **Drop-off Points**: Where users abandon the funnel
+- **Time to Convert**: Average time through funnel
+- **Revenue per Funnel**: Revenue attribution by funnel
+- **A/B Test Impact**: Performance improvement from experiments
+
+## Business Rules & Constraints
+
+### 1. Experiment Validation
+
+```typescript
+// Total traffic allocation must equal 100%
+const totalPercentage = data.reduce((acc, variant) => acc + variant.weight, 0);
+if (totalPercentage !== 100) {
+  return { status: "error", message: "Total weight should be 100" };
+}
+```
+
+### 2. Domain Ownership Verification
+
+```typescript
+// [src/server/actions/hostname.ts](mdc:src/server/actions/hostname.ts)
+export async function checkDomainAvailability(
+  hostname: string
+): Promise<DomainState> {
+  const root = getRootDomain(hostname);
+  const subdomainName = getSubdomainName(hostname);
+
+  const rootDomain = await db.query.domain.findFirst({
+    where: eq(domain.root, root),
+  });
+
+  const isOwner = rootDomain?.companyId === session.company.id;
+
+  // Business logic for domain ownership and verification
+}
+```
+
+### 3. Data Quality Rules
+
+- **Schema Validation**: Events must conform to defined schemas
+- **Required Fields**: Mandatory fields for event processing
+- **Data Type Validation**: Proper data types for all fields
+- **Business Logic Validation**: Domain-specific validation rules
+
+## Optimization Strategies
+
+### 1. Performance Optimization
+
+- **Database Indexing**: Strategic indexes for common queries
+- **Query Optimization**: Efficient database queries with Drizzle ORM
+- **Caching Layers**: Multi-level caching with Next.js and Cloudflare KV
+- **CDN Integration**: Static asset optimization with Cloudflare R2
+
+### 2. Scalability Patterns
+
+- **Horizontal Scaling**: Stateless server actions for easy scaling
+- **Database Partitioning**: Time-series data partitioning for events
+- **Queue Processing**: Asynchronous event processing for high throughput
+- **Load Balancing**: Intelligent traffic distribution across variants
+
+### 3. Reliability Patterns
+
+- **Error Handling**: Comprehensive error handling and recovery
+- **Retry Logic**: Automatic retry for transient failures
+- **Circuit Breakers**: Protection against cascading failures
+- **Monitoring**: Real-time performance and error monitoring
+
+## Data Flow Architecture
+
+### 1. Event Collection Flow
+
+```
+User Action → SDK/API → Event Processing → Schema Validation →
+Database Storage → Destination Routing → External Platforms
+```
+
+### 2. Experiment Execution Flow
+
+```
+User Visit → Traffic Allocation → Variant Selection →
+Feature Flag Application → Experience Delivery → Conversion Tracking
+```
+
+### 3. Funnel Optimization Flow
+
+```
+Funnel Definition → Step Tracking → Conversion Analysis →
+Bottleneck Identification → A/B Test Creation → Performance Measurement
+```
+
+## Business Intelligence Features
+
+### 1. Real-Time Dashboards
+
+- **Live Metrics**: Real-time performance indicators
+- **Trend Analysis**: Historical performance trends
+- **Alert System**: Automated performance alerts
+- **Custom Reports**: Flexible reporting capabilities
+
+### 2. Predictive Analytics
+
+- **Conversion Prediction**: ML-based conversion forecasting
+- **Traffic Forecasting**: Predictive traffic modeling
+- **Anomaly Detection**: Automated anomaly identification
+- **Recommendation Engine**: AI-powered optimization suggestions
+
+### 3. Advanced Segmentation
+
+- **Behavioral Segmentation**: User behavior-based segments
+- **Geographic Segmentation**: Location-based targeting
+- **Device Segmentation**: Device and browser targeting
+- **Custom Segments**: User-defined segmentation rules
+
+## Compliance & Security
+
+### 1. Privacy Compliance
+
+- **GDPR Compliance**: European privacy regulation adherence
+- **CCPA Compliance**: California privacy law compliance
+- **Data Minimization**: Minimal data collection practices
+- **Consent Management**: User consent tracking and management
+
+### 2. Data Security
+
+- **Encryption**: End-to-end data encryption
+- **Access Control**: Role-based access permissions
+- **Audit Logging**: Comprehensive audit trails
+- **Data Retention**: Configurable data retention policies
+
+### 3. Platform Security
+
+- **Authentication**: Multi-provider authentication system
+- **Authorization**: Company-based access control
+- **API Security**: Secure API endpoints and validation
+- **Infrastructure Security**: Cloudflare-based security layers

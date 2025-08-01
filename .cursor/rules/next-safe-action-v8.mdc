@@ -1,0 +1,140 @@
+---
+alwaysApply: false
+---
+
+# Next-Safe-Action v8 Patterns
+
+## Overview
+
+This project uses next-safe-action v8 for type-safe Server Actions. All actions follow the new v8 API pattern with proper middleware and method chaining.
+
+## Safe Action Client Setup
+
+### Base Configuration
+
+The safe action clients are defined in [lib/safe-action.ts](mdc:lib/safe-action.ts):
+
+```typescript
+// Base client for non-authenticated actions
+const actionClient = createSafeActionClient({
+  defineMetadataSchema() {
+    return z.object({
+      actionName: z.string(),
+    });
+  },
+  handleServerError(e) {
+    console.error("Action error:", e.message);
+    if (e instanceof ActionError) {
+      return e.message;
+    }
+    return DEFAULT_SERVER_ERROR_MESSAGE;
+  },
+});
+
+// Auth client with authentication middleware
+export const authAction = actionClient.use(async ({ next }) => {
+  try {
+    const session = await auth();
+    if (!session) {
+      throw new ActionError("Unauthorized");
+    }
+    return next({ ctx: { session } });
+  } catch (error) {
+    throw new ActionError("Authentication failed");
+  }
+});
+```
+
+## Action Definition Pattern
+
+### Standard Actions
+
+All actions in [app/actions.ts](mdc:app/actions.ts) follow this pattern:
+
+```typescript
+export const actionName = authAction
+  .metadata({ actionName: "actionName" })
+  .inputSchema(
+    z.object({
+      // Define your input schema here
+      field: z.string().min(1),
+    })
+  )
+  .action(async ({ parsedInput, ctx }) => {
+    const { field } = parsedInput;
+    const { session } = ctx;
+
+    // Your action logic here
+    return { success: true, data };
+  });
+```
+
+### Key Points
+
+- Always use `.metadata()` to set the action name
+- Use `.inputSchema()` to define input validation
+- Access parsed input via `parsedInput` parameter
+- Access session via `ctx.session`
+- Return structured responses
+
+## Error Handling
+
+### Custom Error Class
+
+```typescript
+class ActionError extends Error {}
+```
+
+### Error Handling in Actions
+
+```typescript
+try {
+  // Action logic
+  return { success: true, data };
+} catch (error) {
+  console.error("Error in action:", error);
+  return { error: "User-friendly error message" };
+}
+```
+
+## Context Access
+
+### Session Access
+
+All authenticated actions have access to the session:
+
+```typescript
+const { session } = ctx;
+const userId = session.user.id;
+```
+
+### Common Patterns
+
+- Use `session.user.id` for user identification
+- Access `session.refreshToken` for Google Ads API calls
+- Use `session.selectedGoogleAdsAccountId` for account selection
+
+## Method Chaining Order
+
+The correct order for method chaining is:
+
+1. `.metadata()` - Set action metadata
+2. `.inputSchema()` - Define input validation
+3. `.action()` - Define the action logic
+
+## Common Schemas
+
+Reusable schemas are defined in [lib/safe-action.ts](mdc:lib/safe-action.ts):
+
+- `idSchema` - For CUID-based IDs
+- `paginationSchema` - For pagination parameters
+- `dateRangeSchema` - For date range queries
+
+## Migration from v7
+
+When migrating from next-safe-action v7:
+
+- Replace `action(schema, handler)` with `.inputSchema(schema).action(handler)`
+- Use `parsedInput` instead of `input`
+- Add `.metadata()` calls for better tracking
+- Remove direct client calls, use method chaining instead

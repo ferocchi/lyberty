@@ -1,0 +1,128 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Universal Form System Migration Guide
+
+## Overview
+This guide provides a step-by-step process for migrating any form in the codebase to the universal, hyper-performant form system based on [src/components/Form/](mdc:src/components/Form). It ensures all forms use the shared types, state management, validation, and Next.js 14+ server actions patterns as described in the [Universal Form System Architecture](mdc:universal-form-system.mdc) rule.
+
+---
+
+## 1. Audit and Prepare
+- **Identify all forms** in the codebase (e.g., in `app/(public)/form/`, `form2/`, legacy flows).
+- **Determine form complexity:**
+  - Use the universal system for all multi-step, dynamic, or advanced forms.
+  - Use [src/components/ui/Form.tsx](mdc:src/components/ui/Form.tsx) (React Hook Form) for simple, flat forms only.
+
+---
+
+## 2. Update Form Configs to Universal Types
+- **All form configs must use `FormType` and each step must use `FormStepType` with an `id` field.**
+- **Example:**
+  - See [app/(public)/form5/formConfig.tsx](mdc:app/(public)/form5/formConfig.tsx) for a correct config.
+- **Migration Steps:**
+  1. Change your form config type to `FormType`.
+  2. Ensure each step is an object with an `id` property and uses `FormStepType`.
+  3. Each field must have an `id` and use the shared field schema.
+  4. Remove any custom/legacy types and replace with imports from [src/components/Form/types.ts](mdc:src/components/Form/types.ts).
+
+---
+
+## 3. Refactor State Management
+- **Replace custom atoms/context** with the shared context and atoms from [src/components/Form/context.tsx](mdc:src/components/Form/context.tsx).
+- **Use the shared `FormProvider` and `MultiStepForm` components.**
+- **Example Usage:**
+  ```tsx
+  import { FormProvider } from "@/components/Form/context";
+  import { formConfig } from "./formConfig";
+
+  export default function MyFormPage() {
+    return (
+      <FormProvider config={formConfig} serverState={null}>
+        <MultiStepForm />
+      </FormProvider>
+    );
+  }
+  ```
+- **Persist state** using `atomWithStorage` if needed for drafts or recovery.
+
+---
+
+## 4. Update Validation Logic
+- **Remove custom validation logic** and use the centralized system in [src/components/Form/validation.ts](mdc:src/components/Form/validation.ts).
+- **Define validation rules in your field schemas.**
+- **Async validation** is supported via the shared system.
+
+---
+
+## 5. Refactor Field and Step Components
+- **Use the shared field and step rendering patterns.**
+- **Custom fields:**
+  - Implement as React components and reference in your step configs.
+  - Example: `{ content: <MyCustomField /> }` in a step config.
+- **Navigation:**
+  - Use the built-in navigation and branching logic from the universal system.
+
+---
+
+## 6. Integrate Server Actions (Next.js 14+)
+- **All mutations (submissions, saves, etc.) must use Server Actions as outlined in the rules.**
+- **Pattern:**
+  - Define server actions in `[app/actions.ts](mdc:app/actions.ts)` or domain-specific files.
+  - Use `next-safe-action` v8 patterns for type safety and error handling.
+  - Example:
+    ```ts
+    // app/actions.ts
+    import { authAction } from "@/lib/safe-action";
+    import { z } from "zod";
+
+    export const submitForm = authAction
+      .metadata({ actionName: "submitForm" })
+      .inputSchema(z.object({ ... }))
+      .action(async ({ parsedInput, ctx }) => {
+        // ...mutation logic
+        return { success: true };
+      });
+    ```
+  - In your form, use the `useAction` hook from `next-safe-action/hooks`:
+    ```tsx
+    import { useAction } from "next-safe-action/hooks";
+    import { submitForm } from "@/app/actions";
+
+    const { execute, result, status } = useAction(submitForm);
+    // Call execute({ ... }) on submit
+    ```
+- **See the [Modern Next.js Data Fetching Patterns](mdc:modern-nextjs-data-fetching.mdc) and [next-safe-action Hooks Usage](mdc:next-safe-action-hooks-usage.mdc) rules for full details.**
+
+---
+
+## 7. Test and Validate
+- **Test all migrated forms** for:
+  - Correct state and navigation
+  - Validation and error handling
+  - Server action integration
+  - Performance (minimal re-renders, fast updates)
+  - Accessibility (semantic HTML, ARIA, keyboard navigation)
+- **Write unit and integration tests** as needed.
+
+---
+
+## 8. Document and Maintain
+- **Document your form configs and any custom field components.**
+- **Update README and rules as needed.**
+- **Reference the [Universal Form System Architecture](mdc:universal-form-system.mdc) rule for future contributors.**
+
+---
+
+## References
+- [src/components/Form/types.ts](mdc:src/components/Form/types.ts)
+- [src/components/Form/context.tsx](mdc:src/components/Form/context.tsx)
+- [src/components/Form/utils.ts](mdc:src/components/Form/utils.ts)
+- [src/components/Form/validation.ts](mdc:src/components/Form/validation.ts)
+- [src/components/Form/MultiStepForm.tsx](mdc:src/components/Form/MultiStepForm.tsx)
+- [app/(public)/form5/formConfig.tsx](mdc:app/(public)/form5/formConfig.tsx)
+- [app/actions.ts](mdc:app/actions.ts)
+- [modern-nextjs-data-fetching.mdc](mdc:modern-nextjs-data-fetching.mdc)
+- [next-safe-action-hooks-usage.mdc](mdc:next-safe-action-hooks-usage.mdc)

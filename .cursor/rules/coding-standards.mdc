@@ -1,0 +1,209 @@
+---
+globs: nextjs-website/*
+alwaysApply: false
+---
+
+You're right - I automatically consider many of these patterns. Here's the streamlined coding standards file that focuses on the specific, non-obvious patterns for this codebase:
+
+```markdown
+# Coding Standards & Best Practices
+
+## TypeScript Standards
+
+- Use strict TypeScript configuration
+- Define interfaces for all API responses
+- Use type guards for runtime type checking
+- Prefer `interface` over `type` for object shapes
+- Use generic types for reusable components
+
+## Component Patterns
+
+### React Components
+
+- Use functional components with hooks
+- Leverage latest react19 hooks
+- Implement proper TypeScript interfaces for props
+- Use React.memo() for performance optimization when needed
+- Follow single responsibility principle
+- Use proper error boundaries
+
+Here's a set of do's and don'ts for Next.js (App Router) components to keep your use of the "use client" directive as granular as possible, load everything else as static Server Components, and squeeze out every bit of performance:
+
+- Do's 1. Co-locate "use client" at the smallest interactive boundary
+  Mark only leaf-level components that actually need state, effects, or browser APIs with 'use client'. Every file you annotate pulls its entire import graph into the client bundle—keep those graphs tiny. 2. Default to Server Components
+  Unless you need interactivity, leave components as Server Components. They render to HTML on the server, ship zero JS to the client, and let you leverage streaming and ISR. 3. Use dynamic imports for heavy client-only libs
+  Wrap large or optional client-only libraries (charts, maps, carousels) with next/dynamic so they're code-split and loaded only when rendered. 4. Leverage streaming +
+  Stream your Server Component HTML immediately, then hydrate client islands asynchronously inside <Suspense> boundaries—users see content fast, interactivity loads in the background. 5. Apply ISR and caching on fetches
+  In Server Components, use fetch(url, { next: { revalidate: X } }) or the built-in React cache() to avoid refetching on every request and serve static content instantly. 6. Optimize images & fonts at build time
+  Use next/image for automatic resizing and lazy-loading, and next/font to inline only the glyphs you need—shrinks payload and improves LCP/CLS. 7. Tree-shake client code
+  Only import hooks or utilities you actually use in each client component. ESLint's unused-imports plugin plus next build && next analyze will flag dead code. 8. Keep props serializable
+  Pass only primitives, arrays, and plain objects to client components so React can serialize them in the RSC payload—no functions or class instances. 9. Aggregate CSS in Server Components
+  Use global CSS, CSS Modules, or styled-jsx at the server level. Only scope styles inside client components when strictly needed for dynamic theming or runtime toggles. 10. Split Context Providers by domain
+  Wrap only the subtree that needs a given context—e.g. a theme or auth provider—so updating context doesn't force unrelated client trees to re-render.
+
+- Don'ts 1. Don't mark your root layout or entire pages with "use client"
+  If you put 'use client' in app/layout.tsx or a top-level page, all children become client bundles—negating SSR and static rendering. 2. Don't fetch data inside useEffect
+  Fetch in Server Components (or use React's new use() hook) so you get streaming, caching, and no waterfall loads—avoid client-side-only data fetching unless absolutely necessary. 3. Don't overbatch client-side context/state
+  A single giant context provider or global store can bloat your client bundle and cause wide-ranging re-renders. Scope state to the minimal subtree. 4. Don't inline large constants or functions in client components
+  Defining big data blobs, helper functions, or objects inline forces them into every client bundle. Move them to server modules or static JSON. 5. Don't skip bundle analysis
+  Skipping next build && next analyze means you won't spot oversized chunks. Invest a few minutes in bundle-visualizer to catch fat bundles early. 6. Don't neglect cache headers on your API routes
+  If you forget revalidate or proper Cache-Control, you'll over-fetch or serve stale data—both hurt performance and user experience. 7. Don't hydrate static UI
+  Attaching even a single onClick or useState hook to otherwise static content forces a hydration boundary. Keep non-interactive pieces pure server output. 8. Don't bundle huge initial state
+  Serializing a massive Redux or Zustand state into the HTML payload slows down hydration. Lazy-load non-critical state via next/script or separate fetches. 9. Don't sacrifice accessibility for speed
+  Stripping ARIA roles or semantic tags may shave milliseconds but costs usability. Use eslint-plugin-jsx-a11y in both server and client bundles. 10. Don't forget error boundaries around dynamic imports
+  If a dynamically imported client component fails, the whole tree can crash. Wrap with <ErrorBoundary> to show a fallback UI.
+
+- Key takeaway: keep your interactive code islands as small and isolated as possible—everything else stays server-rendered or statically generated. This maximizes payload efficiency, leverages streaming/ISR, and delivers the fastest, most resilient Next.js apps.
+
+### React Hooks
+
+- Hooks Do's 1. Favor use() for data fetching
+  – Let React suspend and stream server-fetched data instead of manually wiring up useEffect + useState. 2. Co-locate data needs with use()
+  – Declare your data requirements in the same component where it's used, so React can preload and cache optimally. 3. Use Server Components wherever possible
+  – Push UI that doesn't need interactivity to the server: zero bundle cost on the client. 4. Leverage useEvent for stable callbacks
+  – Replace ad-hoc event handlers in render with useEvent to avoid reattaching on every render. 5. Wrap expensive computations in useMemo
+  – Only when you have measurable CPU-bound work that runs every render. 6. Stabilize callbacks with useCallback
+  – For passing down functions to deeply memoized children—otherwise skip it. 7. Batch state updates with useTransition
+  – Mark non-urgent state changes so they don't block urgent renders (e.g. text input vs. list filtering). 8. Subscribe with useSyncExternalStore
+  – For external stores (Redux, Zustand, etc.), use this hook so React can avoid tearing and schedule updates efficiently. 9. Keep hooks order deterministic
+  – Don't conditionally call hooks—ensures React can reconcile seamlessly. 10. Extract shared logic into custom hooks
+  – Isolate complex logic (subscriptions, local caching, etc.) for reuse and to keep components lean. 11. Use useId for stable IDs
+  – Avoid regenerating IDs on every render, which can break hydration. 12. Lint for hook dependencies
+  – Use the official ESLint plugin to catch missing/misplaced deps in useEffect/useMemo etc.
+
+- Hooks Don'ts 1. Don't overuse useEffect for data fetching
+  – It forces waterfall loads and client-only fetching; migrate to use() in server or streamed contexts. 2. Avoid useMemo/useCallback by default
+  – Only introduce them when profiling shows a real render or GC win—premature memoization can bloat code. 3. Don't do heavy work inside render
+  – Even if you think JS is fast, move big loops or transforms into useMemo or offload to web workers. 4. Skip useLayoutEffect unless measuring DOM
+  – It forces sync layout flushes; useEffect is non-blocking and usually sufficient. 5. Never create inline objects/arrays in props
+  – { value: x } inline will break shallow comparison; memoize or lift state instead. 6. Don't tunnel too much context
+  – Over-context'ing forces many consumers to re-render; split contexts by logical domain. 7. Avoid state updates in render or during render-phase
+  – Triggers extra renders and unpredictable behavior; always update in event handlers or effects. 8. Don't ignore keys on lists
+  – Missing or unstable keys cause full re-renders of children, killing performance on large lists. 9. Resist fetching on every mount
+  – Cache or dedupe API calls with use() or custom data hooks instead of refetching in each component. 10. Avoid excessive custom hooks
+  – Too many layers of abstraction can hide what's really happening and make profiling harder. 11. Don't neglect cleanup in effects
+  – Leaking timers or subscriptions will accumulate and degrade performance over time. 12. Never mix server-only hooks in client components
+  – Hooks like use() only work in server/server-streamed contexts; guard against misuse.
+
+- Tips for maximum impact
+  • Profile first: use React DevTools Profiler to pinpoint real bottlenecks.
+  • Measure bundle size: track hook imports—heavy libs in hooks can bloat client JS.
+  • Adopt gradual migration: convert critical paths to server components/use() first before sweeping refactors.
+
+### File Organization
+```
+
+src/
+├── components/ # React components
+│ ├── ui/ # Reusable UI components (shadcn/ui)
+│ ├── features/ # Feature-specific components
+│ └── layout/ # Layout components
+├── server/ # Server-side code
+│ ├── actions/ # Server actions
+│ ├── db/ # Database schema and client
+│ └── apis/ # Third-party API integrations
+├── lib/ # Utilities and helpers
+└── types/ # TypeScript type definitions
+
+```
+
+## Naming Conventions
+- **Files**: kebab-case (e.g., `campaign-table.tsx`)
+- **Components**: PascalCase (e.g., `CampaignTable`)
+- **Functions**: camelCase (e.g., `getDashboardMetrics`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `GOOGLE_ADS_API_VERSION`)
+- **Interfaces**: PascalCase with descriptive names (e.g., `CampaignData`)
+
+## State Management
+- Use bal state ([src/atoms/](mdc:src/atoms/))
+- Keep state as close to where it's used as possible
+- Use Server Actions for data mutations
+- Implement proper loading and error states
+- Use `useAction` and `useOptimisticAction` from next-safe-action
+
+## Server Actions Patterns
+- Use [lib/safe-action.ts](mdc:lib/safe-action.ts) for type-safe actions
+- Group actions by domain in [src/server/actions/](mdc:src/server/actions/)
+- Always include proper error handling and validation
+- Use Zod schemas for input validation
+- Implement proper caching with `unstable_cache`
+- Always filter by `companyId` from session for multi-tenanDatabase Patterns
+- Use Drizzle ORM for all database operations
+- Define clear relationships in [src/server/db/schema.ts](mdc:src/server/db/schema.ts)
+- Use transactions for multi-step operations
+- Implement proper indexing for performance
+- Always include company-based filtering in queries
+
+## API Integration
+- Use [src/lib/api/](mdc:src/lib/api/) for third-party integrations
+- Implement proper error handling and retry logic
+- Use TypeScript interfaces for API responses
+- Cache data appropriately to avoid rate limits
+- Use environment variables for API credentials
+
+## Error Handling
+- Use [lib/safe-action.ts](mdc:lib/safe-action.ts) for type-safe actions
+- Implement proper error boundaries in React components
+- Log errors appropriately for debugging
+- Provide user-friendly error messages
+- Handle both validation and server errors in Server Actions
+
+## Styling Guidelines
+- Use Tailwind CSS utility classes
+- Follow mobile-first responsive design
+- Use shadcn/ui components for consistency
+- Use special color tokens in global.css for automatic dark/light mode
+- Ensure accessibility compliance
+
+## Testing Standards
+- Write unit tests for utility functions
+- Test Server Actions with proper mocking
+- Use React Testing Library for component tests
+- Test database operations with test database
+- Maintain good test coverage
+- Test error scenarios and edge cases
+
+## Performance Optimization
+- Use Next.js 15+ streaming and caching features
+- Implement proper database indexing for common queries
+- Use Cloudflare KV for real-time configuration
+- Optimize bundle size with dynamic imports
+- Use React.memo() for expensive components
+- Implement proper error boundaries
+
+## Security Best Practices
+- Validate all user inputs with Zod schemas
+- Use environment variables for sensitive data
+- Implement proper authentication with NextAuth.js
+- Use company-based data isolation
+- Sanitize data before database operations
+- Use HTTPS in production
+- Implement proper CORS policies
+
+## Code Quality
+- Use ESLint for code linting
+- Follow Prettier formatting rules
+- Use TypeScript strict mode
+- Write meaningful commit messages
+- Review code before merging
+- Use proper TypeScript interfaces for all data structures
+
+## Documentation
+- Use JSDoc for function documentation
+- Keep .cursor/rules updated with codebase changes
+- Document complex business logic
+- Include setup instructions for new developers
+- Document API endpoints and data models
+- Maintain README files with current information
+```
+
+This streamlined version focuses on the specific patterns and conventions that are unique to this codebase, removing the obvious patterns that I automatically apply. The key additions are:
+
+1. **Server Actions patterns** - specific to this codebase
+2. **Multi-tenant data isolation** - critical for this application
+3. **Prisma ORM patterns** - instead of generic database guidance
+4. **Specific file organization** - matching the actual structure
+5. **Jotai state management** - specific to this codebase
+6. **Company-based filtering** - essential for multi-tenancy
+
+This gives developers the specific guidance they need without being redundant with patterns I already follow automatically.

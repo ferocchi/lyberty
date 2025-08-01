@@ -1,0 +1,256 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Adtracktiv - Tracking & Experimentation Platform
+
+## Project Overview
+
+Adtracktiv is a comprehensive tracking and experimentation platform that enables businesses to optimize their digital marketing funnels through real-time data collection, A/B testing, and intelligent traffic routing. The platform focuses on conversion optimization through systematic experimentation and data-driven decision making.
+
+## Core Architecture
+
+- **Frontend**: Next.js 14 with App Router, TypeScript, Tailwind CSS with custom design system
+- **State Management**: Jotai for global state management
+- **Database**: Drizzle ORM with PostgreSQL for time-series metrics storage
+- **Authentication**: NextAuth.js with multiple OAuth providers (Google, Facebook)
+- **API Integration**: Multiple third-party integrations (Google Ads, Facebook, Shopify, Cloudflare)
+- **Deployment**: Vercel-ready configuration with Cloudflare infrastructure
+
+## Key Features
+
+### 1. Real-Time Event Tracking
+
+- **Multi-Source Data Collection**: Website SDK, mobile app, and API event tracking
+- **Real-Time Processing**: Live event processing with sub-second latency
+- **Data Quality Monitoring**: Automated violation detection and alerting
+- **Privacy Compl and CCPA compliant data ent Transformation**: Advanced d and enrichment
+
+### 2. A/B Test
+
+- **Multi-Variant Testing**: Support for unlimited test variants with traffic allocation
+- **Traffic Allocation**: Precise percentage-based traffic distribution (0-100%)
+- **Feature Flag Integration**: Dynamic feature toggling for experiments
+- **Statistical Significance**: Automated significance testing and monitoring
+- **Page-Level Experiments**: Enable experiments for specific landing pages
+
+### 3. Smart Traffic Routing (Rotators)
+
+- **URL Rotator**: Intelligent traffic distribution across landing pages
+- **Conditional Routing**: Rule-based traffic allocation with feature flags
+- **Performance Optimization**: Real-time performance-based routing
+- **Conversion Tracking**: End-to-end conversion attribution
+- **KV Store Synchronization**: Real-time configuration updates
+
+### 4. Funnel Optimization
+
+- **Conversion Funnel Analysis**: Multi-step funnel tracking and optimization
+- **Bottleneck Identification**: Automated detection of conversion drop-offs
+- **A/B Testing Integration**: Experimentation within funnel steps
+- **Performance Metrics**: Real-time funnel performance monitoring
+
+### 5. Multi-Platform Integration
+
+- **Google Ads**: Campaign management and conversion tracking
+- **Facebook/Meta**: Ad account integration and event tracking
+- **Shopify**: E-commerce data integration
+- **Cloudflare**: Hostname management, KV storage, R2 object storage
+- **Email**: Nodemailer integration with React Email templates
+
+### 6. Advanced Analytics & Reporting
+
+- **Custom Reports**: User-defined analytics views and dashboards
+- **Real-Time Metrics**: Live performance monitoring
+- **Data Visualization**: Interactive charts and graphs
+- **Export Capabilities**: Data export in multiple formats
+
+## Main Application Structure
+
+### Core Pages
+
+- [app/(protected)/(brand)/dashboard/page.tsx](<mdc:app/(protected)/(brand)/dashboard/page.tsx>) - Main dashboard
+- [app/(protected)/(brand)/tracking/page.tsx](<mdc:app/(protected)/(brand)/tracking/page.tsx>) - Event tracking management
+- [app/(protected)/(brand)/experiments/page.tsx](<mdc:app/(protected)/(brand)/experiments/page.tsx>) - A/B testing experiments
+- [app/(protected)/(brand)/rotators/page.tsx](<mdc:app/(protected)/(brand)/rotators/page.tsx>) - Traffic routing management
+- [app/(protected)/(brand)/reports/page.tsx](<mdc:app/(protected)/(brand)/reports/page.tsx>) - Analytics and reporting
+
+### Key Components
+
+- **Tracking System**: Event collection, processing, and delivery
+- **Experiment Engine**: A/B testing with statistical analysis
+- **Traffic Router**: Smart URL rotation and traffic allocation
+- **Data Pipeline**: Real-time event processing and transformation
+- **Analytics Dashboard**: Performance monitoring and insights
+
+## Data Models
+
+### Experiment Management
+
+```typescript
+interface Experiment {
+  id: string;
+  name: string;
+  description: string;
+  status: "draft" | "running" | "ended";
+  allocation: number; // Traffic allocation percentage
+  filters: Filter[]; // Targeting criteria
+  enablePageExperiment: boolean; // Page-level experimentation
+  results: object; // Statistical results
+  companyId: string;
+}
+
+interface ExperimentVariant {
+  id: string;
+  name: string;
+  url: string;
+  weight: number; // Traffic weight (0-100)
+  experimentId: string;
+  flags: FeatureFlag[]; // Feature flag associations
+}
+```
+
+### Tracking & Analytics
+
+```typescript
+interface Event {
+  id: string;
+  name: string;
+  companyId: string;
+  pseudoId: string;
+  sessionId: string;
+  pageInstanceId: string;
+  parameters: string;
+  timestamp: string;
+  // Device and browser information
+  deviceBrand: string;
+  deviceModel: string;
+  deviceType: string;
+  browser: string;
+  // Page and referrer data
+  pageHref: string;
+  pageHostname: string;
+  pagePathname: string;
+  referrerHref: string;
+  // Geographic data
+  city: string;
+  region: string;
+  country: string;
+  // UTM parameters
+  utmCampaign: string;
+  utmSource: string;
+  utmMedium: string;
+  utmContent: string;
+  utmTerm: string;
+  // Experiment tracking
+  hotLinkSlug: string;
+  pathwayId: string;
+}
+```
+
+### Traffic Routing
+
+```typescript
+interface HotLink {
+  id: string;
+  slug: string;
+  url: string;
+  companyId: string;
+  hotLinkToPathway: HotLinkToPathway[];
+}
+
+interface Pathway {
+  id: string;
+  name: string;
+  experimentId: string;
+  pathwayToFlag: PathwayToFlag[];
+}
+```
+
+## User Flow
+
+### 1. Onboarding Process
+
+1. **Company Setup**: Create company account and configure domains
+2. **Platform Integration**: Connect advertising platforms (Google Ads, Facebook)
+3. **Tracking Setup**: Configure event tracking sources and destinations
+4. **Domain Verification**: Verify domain ownership for tracking setup
+
+### 2. Experimentation Workflow
+
+1. **Create Experiment**: Define test hypothesis and variants
+2. **Configure Traffic**: Set traffic allocation percentages
+3. **Launch Test**: Start experiment with real traffic
+4. **Monitor Results**: Track performance and statistical significance
+5. **Optimize**: Apply winning variants and iterate
+
+### 3. Traffic Routing Process
+
+1. **Create Rotator**: Set up URL rotation with multiple destinations
+2. **Configure Rules**: Define traffic allocation and conditions
+3. **Deploy**: Activate rotator for live traffic
+4. **Monitor Performance**: Track conversion rates and optimize
+
+### 4. Analytics & Reporting
+
+1. **Define Metrics**: Set up key performance indicators
+2. **Create Views**: Build custom analytics dashboards
+3. **Monitor Performance**: Track real-time metrics and trends
+4. **Generate Insights**: Identify optimization opportunities
+
+## Technical Stack
+
+### Frontend
+
+- **Next.js 14**: App Router with Server Components
+- **TypeScript**: Full type safety
+- **Tailwind CSS**: Custom design system with design tokens
+- **Jotai**: Global state management
+- **shadcn/ui**: Component library with custom variants
+
+### Backend
+
+- **Server Actions**: Type-safe server-side operations
+- **Drizzle ORM**: Database operations and migrations
+- **PostgreSQL**: Primary database
+- **Cloudflare KV**: Real-time configuration storage
+- **Cloudflare R2**: Object storage
+
+### Integrations
+
+- **Google Ads API**: Campaign management and optimization
+- **Facebook Graph API**: Ad account integration
+- **Shopify API**: E-commerce data
+- **Cloudflare API**: Infrastructure management
+- **Email Services**: Transactional email delivery
+
+### Infrastructure
+
+- **Vercel**: Application hosting and deployment
+- **Cloudflare**: CDN, DNS, and edge computing
+- **PostgreSQL**: Database hosting
+
+## Business Value
+
+### For Marketers
+
+- **Data-Driven Decisions**: Real-time insights for campaign optimization
+- **A/B Testing**: Systematic experimentation for conversion improvement
+- **Traffic Optimization**: Smart routing for maximum conversion rates
+- **Multi-Platform Integration**: Unified view across advertising platforms
+
+### For Developers
+
+- **Real-Time Processing**: Sub-second event processing and delivery
+- **Scalable Architecture**: Handles high-volume traffic and data
+- **Type Safety**: Full TypeScript coverage for reliability
+- **Modern Stack**: Latest technologies for performance and maintainability
+
+### For Businesses
+
+- **Conversion Optimization**: Systematic improvement of conversion rates
+- **Cost Reduction**: Optimized ad spend through better targeting
+- **Revenue Growth**: Data-driven optimization for increased revenue
+- **Competitive Advantage**: Advanced analytics and experimentation capabilities
+
+This platform represents a comprehensive solution for businesses looking to optimize their digital marketing performance through advanced tracking, experimentation, and data-driven decision making.

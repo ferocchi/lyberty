@@ -1,0 +1,4 @@
+* @your-github-username
+apps/marketing/** @marketing-team
+services/** @backend-team
+packages/ui/** @design-team 

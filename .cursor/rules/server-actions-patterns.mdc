@@ -1,0 +1,367 @@
+---
+description: Documents general Server Actions patterns used throughout the project Categorizes actions by functionality (tracking, experiments, rotators, reports, etc.e patterns, database operations, and error handling Includes session management and data processing best practices
+globs: 
+alwaysApply: false
+---
+# Server Actions Patterns
+
+## Overview
+
+This project uses Next.js Server Actions with traditional patterns (not next-safe-action) for server-side operations. All actions are defined in [src/server/actions/](mdc:src/server/actions/) and follow consistent patterns with proper authentication, error handling, and database operations using Drizzle ORM.
+
+## Action Categories
+
+### Authentication & User Management
+
+Actions for user authentication and management:
+
+- `auth()` - Get authenticated session
+- `signOut()` - Sign out user
+- `signInWithCredentials()` - Sign in with email/password
+- `signInWithGoogle()` - OAuth with Google
+- `signInWithGithub()` - OAuth with GitHub
+- `createUser()` - Register new user
+- `verifyUser()` - Verify email with PIN code
+
+### Company Management
+
+Actions for multi-tenant company operations:
+
+- `createCompany()` - Create new company/brand
+- `addMemberToCompany()` - Invite user to company
+- `removeMemberFromCompany()` - Remove user from company
+- `getCompanyMembers()` - List company members
+- `getUserCompanies()` - Get user's companies
+- `updateCompanyLogo()` - Update company branding
+- `updateCompanyName()` - Update company name
+- `updateCompanySlug()` - Update company slug
+
+### Tracking & Analytics
+
+Actions for event tracking and data collection:
+
+- `addSource()` - Create new data source
+- `createWebsiteSource()` - Create website tracking source
+- `getSources()` - List company data sources
+- `getDestinations()` - List data destinations
+- `getTrackingHistory()` - Get tracking activity
+- `getViolations()` - Get data quality violations
+- `getSourcesMetrics()` - Get source performance metrics
+- `getDestinationsMetrics()` - Get destination performance metrics
+
+### Experiments & A/B Testing
+
+Actions for experimentation management:
+
+- `createExperiment()` - Create new A/B test
+- `editExperimentSettings()` - Update experiment configuration
+- `getAllFunnels()` - List conversion funnels
+- `createFunnel()` - Create new conversion funnel
+
+### Traffic Routing (Rotators)
+
+Actions for smart traffic routing:
+
+- `createHotLink()` - Create new traffic router
+- `updateHotLink()` - Update router configuration
+- `deleteHotLink()` - Delete traffic router
+- `syncHotLinks()` - Sync router to KV storage
+- `updateHotLinksKV()` - Update Cloudflare KV cache
+
+### Reports & Analytics
+
+Actions for reporting and data visualization:
+
+- `saveView()` - Save custom report view
+- `getViewById()` - Get specific report view
+- `getUserLastView()` - Get user's last viewed report
+
+### Access Token Management
+
+Actions for third-party API integrations:
+
+- `createAccessToken()` - Store encrypted API tokens
+
+## Response Patterns
+
+### Success Responses
+
+```typescript
+return {
+  status: "success",
+  message: "Operation completed successfully"
+};
+```
+
+### Error Responses
+
+```typescript
+return {
+  status: "error",
+  message: "User-friendly error message"
+};
+```
+
+### Complex Responses
+
+```typescript
+return {
+  status: "success",
+  companyViolations,
+  message: `Found ${companyViolations.length} violations`
+};
+```
+
+### Form Action Responses
+
+```typescript
+return {
+  message: "Success message for form submission"
+};
+```
+
+## Database Operations
+
+### Drizzle ORM Integration
+
+All database operations use Drizzle ORM with proper error handling:
+
+```typescript
+const [insertedCompany] = await db
+  .insert(company)
+  .values({
+    name,
+    slug,
+  })
+  .returning({ id: company.id });
+```
+
+### Company-Scoped Queries
+
+Always scope database queries to the current company:
+
+```typescript
+const sources = await db
+  .select()
+  .from(sources)
+  .where(eq(sources.companyId, session.company.id));
+```
+
+### Complex Queries with Joins
+
+```typescript
+const result = await db
+  .select()
+  .from(user)
+  .leftJoin(view, eq(user.lastViewId, view.id))
+  .where(and(
+    eq(user.id, userId),
+    eq(view.companyId, companyId)
+  ));
+```
+
+## Error Handling Patterns
+
+### Try-Catch Blocks
+
+```typescript
+try {
+  // Action logic
+  return { status: "success", message: "Operation completed" };
+} catch (error) {
+  console.error("Error in action:", error);
+  return { status: "error", message: "Failed to perform action" };
+}
+```
+
+### Validation Errors
+
+Return user-friendly validation errors:
+
+```typescript
+const parsedData = CreateCompanySchema.safeParse(data);
+if (!parsedData.success) {
+  return { message: "Invalid fields." };
+}
+```
+
+### Database Constraint Errors
+
+Handle unique constraint violations:
+
+```typescript
+const existingCompanies = await db.query.company.findMany({
+  where: eq(company.slug, slug),
+});
+if (existingCompanies.length > 0) {
+  return { message: "This brand slug is already taken." };
+}
+```
+
+## Session Management
+
+### Session Access
+
+All authenticated actions access the session:
+
+```typescript
+const session = await auth();
+const userId = session.user.id;
+const companyId = session.company.id;
+```
+
+### Authentication Guards
+
+```typescript
+const session = await auth();
+if (!session) {
+  redirect("/login");
+}
+```
+
+### Company Context
+
+Always use company context for multi-tenancy:
+
+```typescript
+const companyId = session.company.id;
+// All database operations scoped to companyId
+```
+
+## Caching Patterns
+
+### Unstable Cache
+
+Use Next.js unstable_cache for frequently accessed data:
+
+```typescript
+const getCachedSources = unstable_cache(
+  async (companyId: string) => {
+    return await db.select().from(sources).where(eq(sources.companyId, companyId));
+  },
+  ["sources"],
+  { tags: ["sources"], revalidate: 120 }
+);
+```
+
+### Cache Invalidation
+
+Invalidate caches when data changes:
+
+```typescript
+revalidateTag("sources");
+revalidatePath("/tracking/sources");
+```
+
+## File Upload Handling
+
+### FormData Processing
+
+```typescript
+export async function updateCompanyLogo(formData: FormData) {
+  const session = await auth();
+  const file = formData.get("avatar") as File | null;
+
+  if (file) {
+    const uploadedUrl = await uploadImage(file);
+    // Update database with new logo URL
+  }
+}
+```
+
+## Redirect Patterns
+
+### Success Redirects
+
+```typescript
+redirect(`/${session.company.slug}/tracking/sources/${savedSource.name}`);
+```
+
+### Form Success Redirects
+
+```typescript
+redirect(`/${session.company.slug}/reports/${savedView.id}`);
+```
+
+## Data Processing
+
+### Complex Data Transformations
+
+```typescript
+const mappedPathways = hotLink.hotLinkToPathway.map(async (hotLinkToPathway) => {
+  const { pathway } = hotLinkToPathway;
+
+  if (pathway.experimentId) {
+    const variants = await db.query.experimentVariant.findMany({
+      with: { experiment: true },
+      where: eq(experimentVariant.experimentId, pathway.experimentId)
+    });
+    return { pathway, variants };
+  }
+
+  return { pathway };
+});
+```
+
+### Batch Operations
+
+```typescript
+for (const [index, pathway] of data.pathways.entries()) {
+  if (pathway.type === "landingPage") {
+    const [insertedPathway] = await db
+      .insert(pathwayTable)
+      .values({
+        landingPage: pathway.url,
+        companyId,
+      })
+      .returning({ id: pathwayTable.id });
+
+    await db.insert(hotLinkToPathway).values({
+      hotLinkSlug: data.slug,
+      pathwayId: insertedPathway.id,
+      conditions: pathway.conditions,
+      priority: data.pathways.length - (index + 1),
+    });
+  }
+}
+```
+
+## Best Practices
+
+1. **Always authenticate** using `auth()` function
+2. **Scope database queries** to the current company
+3. **Handle errors gracefully** with user-friendly messages
+4. **Log errors** for debugging purposes
+5. **Use structured responses** for consistency
+6. **Implement proper caching** with unstable_cache
+7. **Invalidate caches** when data changes
+8. **Use proper TypeScript types** for all parameters and returns
+9. **Validate input data** with Zod schemas
+10. **Test actions thoroughly** before deployment
+11. **Use transactions** for multi-step operations
+12. **Implement proper file upload handling**
+13. **Handle redirects appropriately** for form submissions
+14. **Use company context** for all multi-tenant operations
+15. **Cache frequently accessed data** to improve performance
+
+## File Organization
+
+### Action Files
+
+- `auth.ts` - Authentication and user management
+- `company.ts` - Company and multi-tenant operations
+- `tracking.ts` - Event tracking and analytics
+- `experiment.ts` - A/B testing and experiments
+- `rotator.ts` - Traffic routing and hotlinks
+- `funnel.ts` - Conversion funnel management
+- `report.ts` - Reporting and data visualization
+- `accessToken.ts` - Third-party API token management
+
+### Common Patterns
+
+- All actions use "use server" directive
+- Import auth function for authentication
+- Use Drizzle ORM for database operations
+- Implement proper error handling
+- Use revalidatePath/revalidateTag for cache invalidation
+- Scope operations to company context

@@ -1,0 +1,19 @@
+{
+  "productName": "ios-shell",
+  "main": "main.rs",
+  "cli": {},
+  "build": {
+    "distDir": "../../apps/web/.next",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "pnpm dev --filter=web",
+    "beforeBuildCommand": "pnpm build --filter=web",
+    "runner": "ios"
+  },
+  "windows": [
+    {
+      "title": "iOS Shell",
+      "width": 375,
+      "height": 667
+    }
+  ]
+}

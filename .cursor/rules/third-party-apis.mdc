@@ -1,0 +1,659 @@
+---
+description: third-party api integrationss, google, auth, facebook, shopify, cloudflare, email, integration patterns
+globs: 
+alwaysApply: false
+---
+# Third-Party API Integrations
+
+## Overview
+This application integrates with multiple third-party APIs for advertising, e-commerce, infrastructure, and data management. All integrations follow consistent patterns for authentication, error handling, and data processing.
+
+## Google Ads API Integration
+
+### Client Setup
+Google Ads API clients are created using helper functions in [app/actions.ts](mdc:app/actions.ts):
+
+```typescript
+function createGoogleAdsClient() {
+  return new GoogleAdsApi({
+    client_id: process.env.GOOGLE_CLIENT_ID!,
+    client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+    developer_token: process.env.GOOGLE_ADS_DEVELOPER_TOKEN!,
+  });
+}
+
+function createCustomerInstance(customerId: string, refreshToken: string) {
+  const client = createGoogleAdsClient();
+  return client.Customer({
+    customer_id: customerId,
+    refresh_token: refreshToken,
+  });
+}
+```
+
+### Authentication Flow
+Actions access Google Ads credentials through the session:
+```typescript
+const { session } = ctx;
+const refreshToken = session.refreshToken;
+const customerId = session.selectedGoogleAdsAccountId;
+```
+
+### Data Fetching Patterns
+```typescript
+// Campaign metrics query
+const query = `
+  SELECT 
+    campaign.id,
+    campaign.name,
+    campaign.status,
+    metrics.impressions,
+    metrics.clicks,
+    metrics.cost_micros,
+    metrics.search_impression_share,
+    metrics.average_cpc,
+    metrics.quality_score
+  FROM campaign 
+  WHERE campaign.status IN ('ENABLED', 'PAUSED')
+  AND segments.date DURING LAST_30_DAYS
+`;
+
+const response = await customer.query(query);
+```
+
+### Error Handling
+```typescript
+try {
+  const customers = await client.listAccessibleCustomers(refreshToken);
+  return { accounts: customers };
+} catch (error) {
+  console.error("Primary approach failed:", error);
+  
+  // Fallback approach
+  try {
+    const testCustomer = client.Customer({
+      customer_id: "1234567890",
+      refresh_token: refreshToken,
+    });
+    const testQuery = "SELECT customer.id FROM customer LIMIT 1";
+    const result = await testCustomer.query(testQuery);
+    return { accounts: [/* fallback data */] };
+  } catch (secondError) {
+    return { error: "Both approaches failed" };
+  }
+}
+```
+
+### Data Processing
+```typescript
+// Convert micros to dollars
+const costInDollars = parseInt(metrics.costMicros || "0") / 1000000;
+
+// Process Lost IS metrics
+const lostIS = parseFloat(metrics.searchRankLostImpressionShare || "0");
+```
+
+## Facebook API Integration
+
+### Client-Side SDK Setup
+Facebook SDK initialization in [src/lib/api/facebook.ts](mdc:src/lib/api/facebook.ts):
+
+```typescript
+export const initFbSdk = () => {
+  return new Promise<string>((resolve) => {
+    window.fbAsyncInit = () => {
+      window.FB.init({
+        appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID!,
+        xfbml: true,
+        version: "v19.0",
+      });
+      resolve("Facebook SDK initialized");
+    };
+  });
+};
+```
+
+### Authentication Flow
+```typescript
+export const fbLogin = () => {
+  return new Promise<FacebookLoginResponse>((resolve) => {
+    window.FB.login(
+      (response: FacebookLoginResponse) => {
+        resolve(response);
+      },
+      {
+        config_id: process.env.NEXT_PUBLIC_FACEBOOK_CONFIG_ID!,
+      }
+    );
+  });
+};
+```
+
+### Server-Side API Calls
+Batch API calls in [src/server/apis/facebook.ts](mdc:src/server/apis/facebook.ts):
+
+```typescript
+export const fetchUserAds = async (accessToken: string) => {
+  try {
+    const response = await axios.post(`https://graph.facebook.com/v20.0`, {
+      batch: [
+        {
+          name: "ad-accounts",
+          method: "GET",
+          relative_url: "/me/adaccounts",
+        },
+        {
+          name: "ads",
+          method: "GET",
+          relative_url: "/{result=ad-accounts:$.data.*.id}/ads?fields=creative,name",
+        },
+      ],
+      access_token: accessToken,
+      include_headers: "false",
+    });
+
+    return JSON.parse(response.data[1].body);
+  } catch (error) {
+    console.error("Error fetching user ads:", error);
+    throw error;
+  }
+};
+```
+
+## Shopify Integration
+
+### OAuth Flow Setup
+Shopify OAuth initialization in [src/server/apis/shopify/auth.ts](mdc:src/server/apis/shopify/auth.ts):
+
+```typescript
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "GET") {
+    return res.status(405).end();
+  }
+
+  try {
+    const shop = shopify.utils.sanitizeShop(req.query.shop as string, true);
+
+    await shopify.auth.begin({
+      shop: shop as string,
+      callbackPath: "/api/shopify/callback",
+      isOnline: true,
+      rawRequest: req,
+      rawResponse: res,
+    });
+  } catch (error) {
+    console.error("OAuth error:", error);
+    res.status(500).json({ error: "Failed to initialize Shopify OAuth" });
+  }
+}
+```
+
+### OAuth Callback Handling
+Token storage in [src/server/apis/shopify/callback.ts](mdc:src/server/apis/shopify/callback.ts):
+
+```typescript
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const session = await auth();
+  const callback = await shopify.auth.callback({
+    rawRequest: req,
+    rawResponse: res,
+  });
+
+  const accessToken = callback.session.accessToken;
+  const encryptedAccessToken = await encrypt(accessToken);
+
+  await db.insert(accessTokenTable).values({
+    encryptedAccessToken,
+    userId: session.user.id,
+    platform: "shopify",
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  });
+
+  res.redirect(302, "/shopify/success");
+}
+```
+
+## Cloudflare Integration
+
+### Hostname Management
+Custom hostname creation in [src/lib/api/cloudflareHostname.ts](mdc:src/lib/api/cloudflareHostname.ts):
+
+```typescript
+export class CloudflareError extends Error {
+  constructor(
+    message: string,
+    public code: number,
+    public retryable: boolean
+  ) {
+    super(message);
+  }
+}
+
+export async function callCloudflare(endpoint: string, options: RequestInit): Promise<CloudflareResponse> {
+  const MAX_RETRIES = 3;
+  let attempt = 0;
+  
+  while (attempt < MAX_RETRIES) {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_HOSTNAME_WORKER}${endpoint}`, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        const error = new CloudflareError(
+          data.errors?.[0]?.message || "Unknown error",
+          response.status,
+          response.status >= 500 || response.status === 429
+        );
+
+        if (error.retryable && attempt < MAX_RETRIES - 1) {
+          attempt++;
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+          continue;
+        }
+        throw error;
+      }
+      return data as CloudflareResponse;
+    } catch (error) {
+      console.log("Cloudflare API error:", error);
+      if (error instanceof CloudflareError) throw error;
+      throw new CloudflareError(error instanceof Error ? error.message : "Network error", 0, true);
+    }
+  }
+  throw new CloudflareError("Max retries exceeded", 0, false);
+}
+```
+
+### KV Storage Integration
+Cloudflare KV operations in [src/lib/api/kv.ts](mdc:src/lib/api/kv.ts):
+
+```typescript
+const namespaceIds: { [key: string]: string } = {
+  company_config: "c7f33a4cb07c417ab6cf8bfdc868313e",
+  global_source: "c71ce167d7624758849f2199c7552ef3",
+  action_template: "15a676b098634fe3b97b0997399e2cc8",
+  platform_schema: "c6b37cb2583641618c4d351e5a15dbfd",
+};
+
+export async function kvGet(key: string): Promise<any> {
+  const response = await fetch(`${getCloudflareBase(key)}/values/${encodeURIComponent(key)}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`KV get error: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data;
+}
+```
+
+### R2 Storage Integration
+S3-compatible client setup in [src/lib/api/r2.ts](mdc:src/lib/api/r2.ts):
+
+```typescript
+import { S3Client } from "@aws-sdk/client-s3";
+
+export const s3Client = new S3Client({
+  region: "auto", // R2 requires this to be 'auto'
+  endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+  tls: true,
+  forcePathStyle: true,
+  requestHandler: {
+    https: {
+      rejectUnauthorized: false,
+    },
+  },
+});
+```
+
+## Email Integration
+
+### Nodemailer Setup
+Email service configuration in [src/lib/api/mailer.ts](mdc:src/lib/api/mailer.ts):
+
+```typescript
+import nodemailer from "nodemailer";
+import { render } from "@react-email/render";
+
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : 587,
+  secure: process.env.EMAIL_SECURE === "true",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+export async function sendEmail({
+  from = '"Adtracktiv " <noreply@adtracktiv.io>',
+  to,
+  subject,
+  template,
+}: SendEmailArgs) {
+  const info = await transporter.sendMail({
+    from,
+    to,
+    subject,
+    text: render(template, { plainText: true }),
+    html: render(template),
+  });
+
+  console.log("Message sent: %s", info.messageId);
+}
+```
+
+## Tracking Platform Integrations
+
+### Supported Destinations
+The application supports multiple tracking destinations as defined in [app/(protected)/(brand)/tracking/DestinationsTable.tsx](mdc:app/(protected)/(brand)/tracking/DestinationsTable.tsx):
+
+```typescript
+export const destinationTypes = [
+  {
+    value: "custom_http",
+    label: "Custom HTTP Endpoint",
+    icon: <PlatformIcon defaultIcon={<CodeIcon size={16} />} />,
+  },
+  {
+    value: "meta",
+    label: "Meta",
+    icon: <PlatformIcon defaultIcon={<MetaLogo />} />,
+  },
+  {
+    value: "ga4",
+    label: "Google Analytics 4",
+    icon: <PlatformIcon defaultIcon={<GALogo />} />,
+  },
+  {
+    value: "tiktok",
+    label: "TikTok",
+    icon: <PlatformIcon defaultIcon={<TikTokLogo />} />,
+  },
+  {
+    value: "klaviyo",
+    label: "Klaviyo",
+    icon: <PlatformIcon defaultIcon={<KlaviyoLogo />} />,
+  },
+  {
+    value: "gtm",
+    label: "Google Tag Manager",
+    icon: <PlatformIcon defaultIcon={<GTMLogo />} />,
+  },
+  {
+    value: "gads",
+    label: "Google Ads",
+    icon: <PlatformIcon defaultIcon={<GAdsLogo />} />,
+  },
+  {
+    value: "everflow",
+    label: "Everflow",
+    icon: <PlatformIcon defaultIcon={<EverflowLogo />} />,
+  },
+  {
+    value: "snapchat",
+    label: "Snapchat",
+    icon: <PlatformIcon defaultIcon={<SnapchatLogo />} />,
+  },
+];
+```
+
+### Platform Schema Validation
+Each platform has specific validation rules in [app/(protected)/(brand)/tracking/playground/DestinationModal.tsx](mdc:app/(protected)/(brand)/tracking/playground/DestinationModal.tsx):
+
+```typescript
+// Everflow validation
+case "everflow":
+  return {
+    ...baseSchema,
+    fields: {
+      networkId: {
+        type: "string",
+        description: "Network ID",
+        validation: {
+          required: true,
+          pattern: "^[1-9][0-9]{4,6}$", // 5-7 digit numbers
+          errorMessage: "Network ID must be a 5-7 digit number",
+        },
+      },
+      apiKey: {
+        type: "string",
+        description: "API Key",
+        validation: {
+          required: true,
+          pattern: "^[A-Za-z0-9]{32}$", // 32 characters
+          errorMessage: "API Key must be 32 characters long",
+        },
+      },
+    },
+  };
+
+// Google Ads validation
+case "gads":
+  return {
+    ...baseSchema,
+    fields: {
+      conversionId: {
+        type: "string",
+        description: "Conversion ID",
+        validation: {
+          required: true,
+          pattern: "^AW-[0-9]{9,11}$", // Starts with AW-
+          errorMessage: "Conversion ID must start with 'AW-' followed by 9-11 digits",
+        },
+      },
+      conversionLabel: {
+        type: "string",
+        description: "Conversion Label",
+        validation: {
+          required: true,
+          pattern: "^[A-Za-z0-9_-]{18,25}$",
+          errorMessage: "Invalid Conversion Label format",
+        },
+      },
+    },
+  };
+```
+
+## Common Integration Patterns
+
+### Authentication Patterns
+
+#### OAuth 2.0 Flow
+```typescript
+// 1. Initialize OAuth
+await platform.auth.begin({
+  shop: shop,
+  callbackPath: "/api/platform/callback",
+  isOnline: true,
+  rawRequest: req,
+  rawResponse: res,
+});
+
+// 2. Handle callback
+const callback = await platform.auth.callback({
+  rawRequest: req,
+  rawResponse: res,
+});
+
+// 3. Store encrypted token
+const encryptedToken = await encrypt(callback.session.accessToken);
+await db.insert(accessTokenTable).values({
+  encryptedAccessToken: encryptedToken,
+  userId: session.user.id,
+  platform: "platform_name",
+  expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+});
+```
+
+#### Session-Based Authentication
+```typescript
+// Access tokens from session
+const { session } = ctx;
+const accessToken = session.accessToken;
+const refreshToken = session.refreshToken;
+
+// Decrypt stored tokens
+const decryptedToken = await decrypt(encryptedToken);
+```
+
+### Error Handling Patterns
+
+#### Retry Logic
+```typescript
+const MAX_RETRIES = 3;
+let attempt = 0;
+
+while (attempt < MAX_RETRIES) {
+  try {
+    const response = await apiCall();
+    return response;
+  } catch (error) {
+    if (error.retryable && attempt < MAX_RETRIES - 1) {
+      attempt++;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      continue;
+    }
+    throw error;
+  }
+}
+```
+
+#### Fallback Strategies
+```typescript
+try {
+  // Primary approach
+  const data = await primaryApiCall();
+  return { success: true, data };
+} catch (error) {
+  console.error("Primary approach failed:", error);
+  
+  // Fallback approach
+  try {
+    const fallbackData = await fallbackApiCall();
+    return { success: true, data: fallbackData };
+  } catch (secondError) {
+    return { error: "Both approaches failed" };
+  }
+}
+```
+
+### Data Processing Patterns
+
+#### Token Encryption/Decryption
+```typescript
+// Store encrypted tokens
+const encryptedToken = await encrypt(accessToken);
+
+// Retrieve and decrypt tokens
+const decryptedToken = await decrypt(encryptedToken);
+```
+
+#### Batch API Calls
+```typescript
+// Facebook batch API example
+const response = await axios.post(`https://graph.facebook.com/v20.0`, {
+  batch: [
+    {
+      name: "ad-accounts",
+      method: "GET",
+      relative_url: "/me/adaccounts",
+    },
+    {
+      name: "ads",
+      method: "GET",
+      relative_url: "/{result=ad-accounts:$.data.*.id}/ads?fields=creative,name",
+    },
+  ],
+  access_token: accessToken,
+  include_headers: "false",
+});
+```
+
+## Environment Variables
+
+### Required Variables
+```bash
+# Google Ads
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_ADS_DEVELOPER_TOKEN=your_developer_token
+GOOGLE_ADS_LOGIN_CUSTOMER_ID=your_manager_account_id
+
+# Facebook
+NEXT_PUBLIC_FACEBOOK_APP_ID=your_facebook_app_id
+NEXT_PUBLIC_FACEBOOK_CONFIG_ID=your_facebook_config_id
+
+# Shopify
+SHOPIFY_API_KEY=your_shopify_api_key
+SHOPIFY_API_SECRET=your_shopify_api_secret
+SHOPIFY_SCOPES=read_products,write_products
+
+# Cloudflare
+CLOUDFLARE_ACCOUNT_ID=your_cloudflare_account_id
+CLOUDFLARE_API_TOKEN=your_cloudflare_api_token
+NEXT_PUBLIC_HOSTNAME_WORKER=your_worker_url
+R2_ACCESS_KEY_ID=your_r2_access_key
+R2_SECRET_ACCESS_KEY=your_r2_secret_key
+
+# Email
+EMAIL_HOST=your_smtp_host
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=your_email_user
+EMAIL_PASS=your_email_password
+```
+
+## Best Practices
+
+### Security
+1. **Always encrypt sensitive tokens** before storing in database
+2. **Use environment variables** for all API credentials
+3. **Validate input data** before making API calls
+4. **Implement proper session management** for OAuth flows
+5. **Use HTTPS** for all API communications
+
+### Error Handling
+1. **Implement retry logic** for transient failures
+2. **Provide fallback strategies** for critical operations
+3. **Log errors appropriately** for debugging
+4. **Return user-friendly error messages**
+5. **Handle rate limits** gracefully
+
+### Performance
+1. **Cache frequently accessed data** to avoid rate limits
+2. **Use batch API calls** when possible
+3. **Implement proper timeout handling**
+4. **Optimize API call frequency**
+5. **Use connection pooling** for database operations
+
+### Monitoring
+1. **Log API call metrics** for performance monitoring
+2. **Track error rates** for each integration
+3. **Monitor token expiration** and refresh cycles
+4. **Set up alerts** for critical failures
+5. **Track rate limit usage** across platforms
+
+### Data Validation
+1. **Validate API responses** before processing
+2. **Use TypeScript interfaces** for type safety
+3. **Implement schema validation** for complex data
+4. **Sanitize user inputs** before API calls
+5. **Handle malformed responses** gracefully
+
+This comprehensive integration system ensures reliable, secure, and performant communication with all third-party services while maintaining consistent patterns across the application.

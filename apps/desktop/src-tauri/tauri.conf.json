@@ -1,0 +1,18 @@
+{
+  "productName": "desktop",
+  "main": "main.rs",
+  "cli": {},
+  "build": {
+    "distDir": "../../apps/web/.next",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "pnpm dev --filter=web",
+    "beforeBuildCommand": "pnpm build --filter=web"
+  },
+  "windows": [
+    {
+      "title": "Desktop App",
+      "width": 800,
+      "height": 600
+    }
+  ]
+}

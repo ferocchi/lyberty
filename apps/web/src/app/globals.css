@@ -1,0 +1,458 @@
+@import "tailwindcss/preflight";
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+
+    --container-xs: 25rem;
+    --container-s: 40rem;
+    --container-m: 60rem;
+    --container-l: 90rem;
+    --container-prose: 65ch;
+
+    /* https://utopia.fyi/type/calculator?c=370,17,1.2,1920,22,1.333,10,4,&s=0.75|0.5|0.25,1.5|2|3|4|6,s-l&g=s,l,xl,12 */
+    /* For text, for other spacing ones - width, padding, margin, etc */
+    /* For sizes lower than 10 pixels, we use Tailwind tokens w-0, w-px, w-0.5, w-1, w-1.5, w-2 */
+    --spacing-3xs: 9px;
+    --spacing-2xs: 11px;
+    --spacing-xs: 12px;
+    --spacing-s: 13px;
+    --spacing-m: 15px;
+    --spacing-l: 17px;
+    --spacing-xl: 20.4px;
+    --spacing-2xl: 24.5px;
+    --spacing-3xl: 35.3px;
+
+    /* For line height */
+    --line-height-3xs: 10.8px;
+    --line-height-2xs: 13.2px;
+    --line-height-xs: 14.4px;
+    --line-height-s: 15.6px;
+    --line-height-m: 24px;
+    --line-height-l: 25.5px;
+    --line-height-xl: 26.5px;
+    --line-height-2xl: 29.4px;
+    --line-height-3xl: 42.4px;
+
+    /* Lyberty.ai Brand Font Variables */
+    --font-satoshi: "Satoshi", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, sans-serif;
+    --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
+
+    --color-black: #000000;
+    --color-white: #ffffff;
+    --color-on-background-primary: #ffffff;
+    --color-on-background-secondary: #ffffff;
+    --color-on-background-critical: #ffffff;
+    --color-on-background-positive: #ffffff;
+    --color-on-background-neutral: #000000;
+
+    --color-background-page: 255, 255, 255;
+    --color-background-page-faded: 249, 249, 251;
+    --color-background-primary: 38, 94, 247;
+    --color-background-primary-faded: 240, 244, 254;
+    --color-background-primary-highlighted: 26, 85, 230;
+    --color-background-secondary: 0, 214, 201;
+    --color-background-secondary-faded: 240, 255, 254;
+    --color-background-secondary-highlighted: 0, 242, 228;
+    --color-background-critical: 226, 44, 44;
+    --color-background-critical-faded: 253, 242, 242;
+    --color-background-critical-highlighted: 208, 40, 40;
+    --color-background-positive: 17, 136, 80;
+    --color-background-positive-faded: 241, 253, 248;
+    --color-background-positive-highlighted: 15, 125, 73;
+    --color-background-neutral: 223, 226, 234;
+    --color-background-neutral-faded: 246, 247, 249;
+    --color-background-neutral-highlighted: 210, 215, 226;
+    --color-background-disabled: 236, 238, 242;
+    --color-background-disabled-faded: 245, 246, 249;
+    --color-background-elevation-base: 255, 255, 255;
+    --color-background-elevation-raised: 255, 255, 255;
+    --color-background-elevation-overlay: 255, 255, 255;
+    --color-border-primary: #164bcf;
+    --color-border-primary-faded: #d6e0f9;
+    --color-border-secondary: #00d6c9;
+    --color-border-secondary-faded: #a2f7f2;
+    --color-border-critical: #bf2424;
+    --color-border-critical-faded: #f6dada;
+    --color-border-positive: #0c6e40;
+    --color-border-positive-faded: #cdede0;
+    --color-border-neutral: #b3bbce;
+    --color-border-neutral-faded: #e2e3e4;
+    --color-border-pivot: #edeff0;
+    --color-border-disabled: #dfe2ea;
+    --color-foreground-positive: #0d7544;
+    --color-foreground-primary: #1b57ed;
+    --color-foreground-secondary: #00726b;
+    --color-foreground-critical: #c42525;
+    --color-foreground-neutral: #14181f;
+    --color-foreground-neutral-faded: #5b667e;
+    --color-foreground-disabled: #c6ccda;
+
+    --shadow-color: rgba(0, 0, 0, 0.15);
+  }
+
+  [data-theme="dark"] {
+    --color-background-page: 13, 17, 26;
+    --color-background-page-faded: 16, 19, 29;
+    --color-background-primary: 5, 50, 102;
+    --color-background-primary-faded: 34, 40, 55;
+    --color-background-primary-highlighted: 7, 59, 118;
+    --color-background-secondary: 0, 214, 201;
+    --color-background-secondary-faded: 40, 41, 31;
+    --color-background-secondary-highlighted: 117, 126, 0;
+    --color-background-critical: 197, 27, 27;
+    --color-background-critical-faded: 62, 31, 31;
+    --color-background-critical-highlighted: 215, 31, 31;
+    --color-background-positive: 16, 132, 78;
+    --color-background-positive-faded: 31, 42, 35;
+    --color-background-positive-highlighted: 18, 143, 85;
+    --color-background-neutral: 63, 72, 97;
+    --color-background-neutral-faded: 34, 40, 53;
+    --color-background-neutral-highlighted: 71, 81, 109;
+    --color-background-disabled: 28, 33, 47;
+    --color-background-disabled-faded: 21, 25, 37;
+    --color-background-elevation-base: 19, 23, 34;
+    --color-background-elevation-raised: 23, 27, 39;
+    --color-background-elevation-overlay: 27, 31, 44;
+    --color-foreground-primary: #5b94fd;
+    --color-foreground-secondary: #00fff0;
+    --color-foreground-critical: #f36a6a;
+    --color-foreground-positive: #18ab66;
+    --color-foreground-neutral: #eff1f5;
+    --color-foreground-neutral-faded: #c0c6d6;
+    --color-foreground-disabled: #3f4962;
+    --color-on-background-neutral: #ffffff;
+    --color-border-primary: #5795fc;
+    --color-border-primary-faded: #2d364f;
+    --color-border-neutral-faded: #929e00;
+    --color-border-neutral-faded-faded: #373828;
+    --color-border-critical: #f86666;
+    --color-border-critical-faded: #582929;
+    --color-border-positive: #18ab67;
+    --color-border-positive-faded: #293b2f;
+    --color-border-neutral: #48526e;
+    --color-border-neutral-faded: #2d374c;
+    --color-border-pivot: #2d2f3a;
+    --color-border-disabled: #242a3a;
+
+    --shadow-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
+a {
+  color: var(--color-foreground-primary);
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* Lyberty.ai Brand Typography Classes */
+@layer components {
+  /* Logo Typography */
+  .font-logo {
+    font-family: var(--font-satoshi);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    text-transform: lowercase;
+  }
+
+  /* Headlines */
+  .font-headline {
+    font-family: var(--font-satoshi);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .font-headline-xl {
+    font-family: var(--font-satoshi);
+    font-weight: 900;
+    font-size: 3.5rem;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .font-headline-lg {
+    font-family: var(--font-satoshi);
+    font-weight: 700;
+    font-size: 2.5rem;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .font-headline-md {
+    font-family: var(--font-satoshi);
+    font-weight: 700;
+    font-size: 2rem;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  /* Subheadlines */
+  .font-subheadline {
+    font-family: var(--font-satoshi);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+  }
+
+  .font-subheadline-lg {
+    font-family: var(--font-satoshi);
+    font-weight: 500;
+    font-size: 1.5rem;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+  }
+
+  .font-subheadline-md {
+    font-family: var(--font-satoshi);
+    font-weight: 500;
+    font-size: 1.25rem;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+  }
+
+  /* Body Text */
+  .font-body {
+    font-family: var(--font-satoshi);
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .font-body-lg {
+    font-family: var(--font-satoshi);
+    font-weight: 400;
+    font-size: 1.125rem;
+    line-height: 1.6;
+  }
+
+  .font-body-sm {
+    font-family: var(--font-satoshi);
+    font-weight: 400;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  /* UI Interface Text */
+  .font-ui {
+    font-family: var(--font-inter);
+    font-weight: 400;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .font-ui-medium {
+    font-family: var(--font-inter);
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  /* Mobile Responsive Typography */
+  @media (max-width: 768px) {
+    .font-headline-xl {
+      font-size: 2.5rem;
+    }
+
+    .font-headline-lg {
+      font-size: 2rem;
+    }
+
+    .font-headline-md {
+      font-size: 1.75rem;
+    }
+
+    .font-subheadline-lg {
+      font-size: 1.25rem;
+    }
+
+    .font-body-lg {
+      font-size: 1rem;
+    }
+  }
+}
+
+/* Legacy Lyberty.ai Styles - Keeping for backward compatibility */
+@layer utilities {
+  /* Blueprint Lines Background */
+  .blueprint-lines {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Gradient Text */
+  .tagline {
+    background: linear-gradient(90deg, #3a86ff, #00ccff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Card Components */
+  .challenge-card,
+  .persona-card,
+  .cta-card,
+  .feature-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+  }
+
+  .challenge-card:hover,
+  .persona-card:hover,
+  .cta-card:hover,
+  .feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Icon Containers */
+  .icon-container {
+    background: linear-gradient(135deg, #3a86ff, #00ccff);
+  }
+
+  .icon-container-aspiration {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+  }
+
+  .icon-container-reality {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+  }
+
+  /* Divider */
+  .divider {
+    position: relative;
+  }
+
+  .divider::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(-50%);
+  }
+
+  /* Dashboard Image */
+  .dashboard-image {
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Glow Effect */
+  .glow {
+    box-shadow: 0 0 15px rgba(58, 134, 255, 0.5);
+  }
+
+  /* Pulse Animation */
+  .pulse {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.05);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Fade In Animation */
+  .fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Slide Up Down Animation */
+  .animation-container {
+    position: relative;
+    width: 500px;
+    height: 51px;
+  }
+
+  .animation-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    animation: slideUpDown 9s infinite;
+    opacity: 0;
+  }
+
+  .animation-text:nth-child(1) {
+    animation-delay: 0s;
+  }
+
+  .animation-text:nth-child(2) {
+    animation-delay: 3s;
+  }
+
+  .animation-text:nth-child(3) {
+    animation-delay: 6s;
+  }
+
+  @keyframes slideUpDown {
+    0%,
+    100% {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    10%,
+    90% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    33% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    43% {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .animation-container {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .blueprint-lines {
+      background-size: 20px 20px;
+    }
+  }
+}

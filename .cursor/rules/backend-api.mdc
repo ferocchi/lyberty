@@ -1,0 +1,322 @@
+---
+alwaysApply: false
+---
+
+# Backend API & Data Layer
+
+## Overview
+
+This application is a comprehensive tracking and experimentation platform built with Next.js 14+, featuring modern Server Actions, Drizzle ORM, and multiple third-party integrations. The backend architecture follows a serverless-first approach with robust data management and real-time capabilities.
+
+## Core Architecture
+
+### Database Layer
+
+- **ORM**: Drizzle ORM with PostgreSQL
+- **Schema**: [src/server/db/schema.ts](mdc:src/server/db/schema.ts) - Comprehensive schema with 1400+ lines covering users, companies, domains, tracking, experiments, and more
+- **Client**: [src/server/db/index.ts](mdc:src/server/db/index.ts) - Database connection and configuration
+
+### Authentication & Authorization
+
+- **Provider**: NextAuth.js with multiple providers (Google, GitHub, Credentials)
+- **Configuration**: [auth.ts](mdc:auth.ts) - Auth configuration with custom callbacks
+- **Actions**: [src/server/actions/auth.ts](mdc:src/server/actions/auth.ts) - Server actions for auth operations
+
+## Server Actions Architecture
+
+### Core Server Actions
+
+All business logic is implemented as Server Actions using the modern Next.js 14+ pattern:
+
+#### Authentication Actions
+
+```typescript
+// [src/server/actions/auth.ts](mdc:src/server/actions/auth.ts)
+- createUser() - User registration with email verification
+- verifyUser() - Email verification with PIN code
+- signInWithCredentials() - Credential-based authentication
+- signInWithGoogle() - Google OAuth integration
+- signInWithGithub() - GitHub OAuth integration
+- updateUserAvatar() - Profile image management
+```
+
+#### Company Management
+
+```typescript
+// [src/server/actions/company.ts](mdc:src/server/actions/company.ts)
+- createCompany() - Brand/company creation with slug validation
+- addMemberToCompany() - Team member invitation system
+- removeMemberFromCompany() - Team member removal
+- getCompanyMembers() - Cached member listing
+- updateCompanyLogo() - Brand asset management
+```
+
+#### Domain & Hostname Management
+
+```typescript
+// [src/server/actions/hostname.ts](mdc:src/server/actions/hostname.ts)
+- checkDomainAvailability() - Domain ownership verification
+- setupDomain() - Cloudflare hostname setup
+- verifyDomainStatus() - DNS verification status
+- verifySubdomain() - Subdomain ownership verification
+- createHostname() - Custom hostname creation
+```
+
+#### Tracking & Analytics
+
+```typescript
+// [src/server/actions/tracking.ts](mdc:src/server/actions/tracking.ts)
+- addSource() - Data source creation
+- createWebsiteSource() - Website tracking setup
+- getSources() - Cached source listing
+- getDestinations() - Data destination management
+- getViolations() - Data quality monitoring
+- getSourcesMetrics() - Real-time metrics
+```
+
+#### Experiment Management
+
+```typescript
+// [src/server/actions/experiment.ts](mdc:src/server/actions/experiment.ts)
+- createExperiment() - A/B testing setup
+- editExperimentSettings() - Experiment configuration
+```
+
+#### URL Rotator & Traffic Management
+
+```typescript
+// [src/server/actions/rotator.ts](mdc:src/server/actions/rotator.ts)
+- createHotLink() - Smart URL creation
+- updateHotLink() - URL configuration updates
+- deleteHotLink() - URL removal
+- syncHotLinks() - KV store synchronization
+```
+
+#### Reporting & Analytics
+
+```typescript
+// [src/server/actions/report.ts](mdc:src/server/actions/report.ts)
+- saveView() - Custom report creation
+- getViewById() - Report retrieval
+- getUserLastView() - User preference tracking
+```
+
+## Third-Party API Integrations
+
+### Cloudflare Integration
+
+- **Hostname Management**: [src/lib/api/cloudflareHostname.ts](mdc:src/lib/api/cloudflareHostname.ts)
+  - Custom hostname creation for tracking domains
+  - SSL certificate management
+  - DNS verification and status monitoring
+  - Error handling with retry logic
+
+### Facebook Marketing API
+
+- **Client SDK**: [src/lib/api/facebook.ts](mdc:src/lib/api/facebook.ts) - Facebook SDK initialization
+- **Server API**: [src/server/apis/facebook.ts](mdc:src/server/apis/facebook.ts) - Ad account and campaign management
+- **Features**: Ad account listing, campaign data retrieval, batch API operations
+
+### Shopify Integration
+
+- **API Client**: [src/server/apis/shopify.ts](mdc:src/server/apis/shopify.ts) - Shopify API configuration
+- **OAuth Flow**: [src/server/apis/shopify/auth.ts](mdc:src/server/apis/shopify/auth.ts) - Authentication handling
+- **Callback Handler**: [src/server/apis/shopify/callback.ts](mdc:src/server/apis/shopify/callback.ts) - OAuth callback processing
+
+### Cloudflare R2 Storage
+
+- **S3 Client**: [src/lib/api/r2.ts](mdc:src/lib/api/r2.ts) - File storage configuration
+- **Features**: Image uploads, file management, CDN integration
+
+### Cloudflare KV Storage
+
+- **Key-Value Store**: [src/lib/api/kv.ts](mdc:src/lib/api/kv.ts) - Distributed caching
+- **Namespaces**: Company configs, global sources, action templates, platform schemas
+- **Operations**: Get, Put, Delete with namespace management
+
+### Email System
+
+- **Mailer**: [src/lib/api/mailer.ts](mdc:src/lib/api/mailer.ts) - Nodemailer integration
+- **Templates**: React Email templates for verification and notifications
+- **Features**: HTML and plain text rendering, SMTP configuration
+
+## Database Schema Overview
+
+### Core Entities
+
+- **Users**: Authentication, profiles, preferences
+- **Companies**: Multi-tenant brand management
+- **Domains**: Root domain and subdomain tracking
+- **Sources**: Data collection endpoints
+- **Destinations**: Data forwarding targets
+- **Events**: Real-time event tracking
+- **Experiments**: A/B testing configuration
+- **Violations**: Data quality monitoring
+- **Views**: Custom reporting dashboards
+
+### Key Relationships
+
+- Multi-tenant architecture with company-based data isolation
+- User-company associations with role management
+- Domain-subdomain hierarchy for tracking setup
+- Source-destination event flow management
+- Experiment-variant traffic allocation
+
+## API Routes (Legacy)
+
+### Authentication Routes
+
+- **NextAuth**: [app/api/auth/[...nextauth]/route.ts](mdc:app/api/auth/[...nextauth]/route.ts) - OAuth flow handling
+- **Auth Options**: [app/api/auth/authOptions.ts](mdc:app/api/auth/authOptions.ts) - Provider configuration
+
+### Utility Routes
+
+- **Cron Jobs**: [app/api/cron/route.ts](mdc:app/api/cron/route.ts) - Scheduled tasks
+- **Debugger**: [app/api/debugger/route.ts](mdc:app/api/debugger/route.ts) - Development tools
+- **Reports**: [app/api/reports/route.ts](mdc:app/api/reports/route.ts) - Analytics endpoints
+- **Triggers**: [app/api/triggers/route.ts](mdc:app/api/triggers/route.ts) - Webhook handling
+- **URLs**: [app/api/urls/route.ts](mdc:app/api/urls/route.ts) - URL processing
+- **Violations**: [app/api/violations/route.ts](mdc:app/api/violations/route.ts) - Data quality alerts
+
+## Data Flow Patterns
+
+### Real-Time Event Processing
+
+1. **Source Creation**: Website/API sources configured via Server Actions
+2. **Event Collection**: Real-time events stored in PostgreSQL
+3. **Destination Routing**: Events forwarded to configured platforms
+4. **Violation Monitoring**: Data quality checks and alerting
+5. **Analytics**: Real-time metrics and reporting
+
+### Domain Management Flow
+
+1. **Domain Verification**: DNS record validation via Cloudflare API
+2. **Hostname Setup**: Custom tracking hostname creation
+3. **SSL Management**: Automatic certificate provisioning
+4. **Subdomain Support**: Multi-level domain hierarchy
+5. **Ownership Validation**: HTML comment verification system
+
+### Experiment Management
+
+1. **Experiment Creation**: A/B test configuration
+2. **Traffic Allocation**: Weighted variant distribution
+3. **Flag Management**: Feature flag integration
+4. **Results Tracking**: Performance metrics collection
+5. **Statistical Analysis**: Automated significance testing
+
+## Performance Optimizations
+
+### Caching Strategy
+
+- **Next.js Cache**: Built-in caching with `unstable_cache`
+- **KV Storage**: Distributed caching for hot data
+- **Database Indexing**: Optimized queries with proper indexes
+- **CDN Integration**: Cloudflare R2 for static assets
+
+### Database Optimization
+
+- **Connection Pooling**: Efficient database connections
+- **Query Optimization**: Drizzle ORM query optimization
+- **Indexing Strategy**: Strategic indexes for common queries
+- **Partitioning**: Time-series data partitioning for events
+
+## Security Features
+
+### Authentication Security
+
+- **OAuth 2.0**: Secure third-party authentication
+- **Email Verification**: PIN-based verification system
+- **Session Management**: Secure session handling
+- **Password Hashing**: bcrypt password encryption
+
+### Data Security
+
+- **Encryption**: Sensitive data encryption (access tokens)
+- **Multi-tenancy**: Company-based data isolation
+- **Input Validation**: Zod schema validation
+- **SQL Injection Prevention**: Parameterized queries via Drizzle
+
+### API Security
+
+- **Rate Limiting**: API request throttling
+- **CORS Configuration**: Cross-origin request handling
+- **Error Handling**: Secure error responses
+- **Access Control**: Role-based permissions
+
+## Development & Testing
+
+### Development Tools
+
+- **TypeScript**: Full type safety across the stack
+- **ESLint**: Code quality enforcement
+- **Prettier**: Code formatting consistency
+- **Hot Reload**: Development server optimization
+
+### Testing Strategy
+
+- **Unit Tests**: Individual function testing
+- **Integration Tests**: API endpoint testing
+- **E2E Tests**: Full user flow testing
+- **Performance Tests**: Load and stress testing
+
+## Deployment & Infrastructure
+
+### Cloudflare Integration
+
+- **Workers**: Serverless function execution
+- **R2 Storage**: Object storage for files
+- **KV Storage**: Distributed key-value caching
+- **DNS Management**: Domain and hostname management
+
+### Environment Configuration
+
+- **Environment Variables**: Secure configuration management
+- **Feature Flags**: Runtime feature toggling
+- **Monitoring**: Application performance monitoring
+- **Logging**: Structured logging for debugging
+
+## Migration Status
+
+### ✅ Completed Migrations
+
+- **API Routes → Server Actions**: All business logic migrated
+- **useEffect → Modern Hooks**: React patterns updated
+- **Database Schema**: Comprehensive Drizzle schema
+- **Authentication**: NextAuth.js integration
+- **File Uploads**: R2 storage integration
+
+### 🔄 In Progress
+
+- **Performance Optimization**: Caching strategy refinement
+- **Testing Coverage**: Comprehensive test suite
+- **Documentation**: API documentation updates
+
+### 📋 Planned
+
+- **GraphQL Integration**: Optional GraphQL layer
+- **Real-time Features**: WebSocket integration
+- **Advanced Analytics**: ML-powered insights
+- **Mobile API**: Native mobile app support
+
+## Best Practices
+
+### Code Organization
+
+- **Server Actions**: Business logic in dedicated action files
+- **API Clients**: Third-party integrations in separate modules
+- **Database Layer**: Centralized schema and query management
+- **Type Safety**: Comprehensive TypeScript interfaces
+
+### Error Handling
+
+- **Graceful Degradation**: Fallback mechanisms for API failures
+- **User Feedback**: Clear error messages and status updates
+- **Logging**: Comprehensive error logging for debugging
+- **Retry Logic**: Automatic retry for transient failures
+
+### Performance
+
+- **Caching**: Multi-layer caching strategy
+- **Optimization**: Database query optimization
+- **CDN**: Static asset delivery optimization
+- **Monitoring**: Real-time performance tracking

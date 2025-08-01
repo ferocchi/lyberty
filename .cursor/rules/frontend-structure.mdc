@@ -1,0 +1,538 @@
+---
+globs: nextjs-website/*
+alwaysApply: false
+---
+
+# Frontend Structure & Design System
+
+## Overview
+
+This application uses a sophisticated design system built on Tailwind CSS with custom design tokens, a UI component system, and comprehensive theming support for both light and dark modes.
+
+## Design System Architecture
+
+### Custom Design Tokens
+
+The design system uses CSS custom properties defined in [app/globals.css](mdc:app/globals.css) and extended in [tailwind.config.ts](mdc:tailwind.config.ts):
+
+#### Spacing Scale (Utopia.fyi)
+
+```css
+--spacing-3xs: 9px; /* w-3xs, h-3xs, p-3xs, m-3xs */
+--spacing-2xs: 11px; /* w-2xs, h-2xs, p-2xs, m-2xs */
+--spacing-xs: 12px; /* w-xs, h-xs, p-xs, m-xs */
+--spacing-s: 13px; /* w-s, h-s, p-s, m-s */
+--spacing-m: 15px; /* w-m, h-m, p-m, m-m */
+--spacing-l: 17px; /* w-l, h-l, p-l, m-l */
+--spacing-xl: 20.4px; /* w-xl, h-xl, p-xl, m-xl */
+--spacing-2xl: 24.5px; /* w-2xl, h-2xl, p-2xl, m-2xl */
+--spacing-3xl: 35.3px; /* w-3xl, h-3xl, p-3xl, m-3xl */
+```
+
+#### Typography Scale
+
+```css
+--line-height-3xs: 10.8px; /* leading-3xs */
+--line-height-2xs: 13.2px; /* leading-2xs */
+--line-height-xs: 14.4px; /* leading-xs */
+--line-height-s: 15.6px; /* leading-s */
+--line-height-m: 24px; /* leading-m */
+--line-height-l: 25.5px; /* leading-l */
+--line-height-xl: 26.5px; /* leading-xl */
+--line-height-2xl: 29.4px; /* leading-2xl */
+--line-height-3xl: 42.4px; /* leading-3xl */
+```
+
+#### Container Sizes
+
+```css
+--container-xs: 25rem; /* max-w-[var(--container-xs)] */
+--container-s: 40rem; /* max-w-[var(--container-s)] */
+--container-m: 60rem; /* max-w-[var(--container-m)] */
+--container-l: 90rem; /* max-w-[var(--container-l)] */
+--container-prose: 65ch; /* max-w-[var(--container-prose)] */
+```
+
+### Color System
+
+#### Semantic Color Tokens
+
+The color system uses semantic naming with automatic dark/light mode switching:
+
+**Primary Colors:**
+
+- `bg-primary` / `text-primary` - Main brand color (#1b57ed light, #5b94fd dark)
+- `bg-primary-faded` / `text-primary-faded` - Subtle primary background
+- `bg-primary-highlighted` - Hover/active states
+
+**Secondary Colors:**
+
+- `bg-secondary` / `text-secondary` - Accent color (#00726b light, #00fff0 dark)
+- `bg-secondary-faded` / `text-secondary-faded` - Subtle secondary background
+
+**Status Colors:**
+
+- `bg-positive` / `text-positive` - Success states (#0d7544 light, #18ab66 dark)
+- `bg-critical` / `text-critical` - Error states (#c42525 light, #f36a6a dark)
+- `bg-neutral` / `text-neutral` - Neutral states (#14181f light, #eff1f5 dark)
+
+**Background Hierarchy:**
+
+- `bg-page` - Page background
+- `bg-page-faded` - Subtle page background
+- `bg-elevation-base` - Card backgrounds
+- `bg-elevation-raised` - Elevated elements
+- `bg-elevation-overlay` - Modal/overlay backgrounds
+
+#### Usage Patterns
+
+```tsx
+// ✅ CORRECT: Use semantic color tokens
+<div className="bg-primary text-onprimary">Primary Button</div>
+<div className="bg-positive-faded text-positive">Success Message</div>
+<div className="bg-critical text-oncritical">Error Alert</div>
+
+// ❌ AVOID: Hard-coded colors
+<div className="bg-blue-500 text-white">Primary Button</div>
+```
+
+### Typography System
+
+#### Font Sizes
+
+Use the custom typography scale with proper line heights:
+
+```tsx
+// ✅ CORRECT: Use semantic typography tokens
+<Text size="xs">Small text</Text>
+<Text size="m">Body text</Text>
+<Text size="xl">Large heading</Text>
+
+// ❌ AVOID: Hard-coded font sizes
+<span className="text-sm">Small text</span>
+```
+
+#### Font Weights
+
+```tsx
+// Available weights from styles/index.ts
+<Text weight="normal">Normal text</Text>
+<Text weight="medium">Medium text</Text>
+<Text weight="semibold">Semibold text</Text>
+<Text weight="bold">Bold text</Text>
+```
+
+## Component Architecture
+
+### Component Patterns
+
+#### 1. Design Token Components
+
+Components should use the design token system for consistency:
+
+```tsx
+// ✅ GOOD: Using design tokens
+export function StatusBadge({ status }: { status: "success" | "error" }) {
+  const color = status === "success" ? "positive" : "critical";
+
+  return (
+    <div
+      className={cn(
+        "px-s py-3xs rounded-s text-xs font-medium",
+        colors[color].bg,
+        colors[color].textOn
+      )}
+    >
+      {status}
+    </div>
+  );
+}
+```
+
+#### 2. Semantic Variants
+
+Use semantic variants instead of hard-coded styles:
+
+```tsx
+// ✅ GOOD: Semantic variants
+<Button variant="solid" color="primary" size="s">
+  Save Changes
+</Button>
+
+<Button variant="outline" color="neutral" size="xs">
+  Cancel
+</Button>
+
+// ❌ AVOID: Hard-coded styles
+<button className="bg-blue-500 text-white px-4 py-2 rounded">
+  Save Changes
+</button>
+```
+
+#### 3. Responsive Design
+
+Use the spacing scale for consistent responsive behavior:
+
+```tsx
+// ✅ GOOD: Consistent spacing scale
+<div className="p-m space-y-s">
+  <Text size="l">Heading</Text>
+  <Text size="m">Body text</Text>
+</div>
+
+// ❌ AVOID: Inconsistent spacing
+<div className="p-4 space-y-2">
+  <Text size="l">Heading</Text>
+  <Text size="m">Body text</Text>
+</div>
+```
+
+## Layout System
+
+### App Router Structure
+
+The application uses Next.js 15 App Router with sophisticated route grouping:
+
+```
+app/
+├── layout.tsx                    # Root layout with providers
+├── (auth)/                       # Authentication routes
+│   ├── layout.tsx               # Auth layout
+│   ├── login/page.tsx           # Login page
+│   └── signup/page.tsx          # Signup page
+├── (protected)/                  # Protected routes
+│   ├── layout.tsx               # Protected layout wrapper
+│   ├── (brand)/                 # Main application
+│   │   ├── layout.tsx           # App layout with sidebar
+│   │   ├── dashboard/page.tsx   # Main dashboard
+│   │   ├── tracking/page.tsx    # Tracking management
+│   │   ├── experiments/page.tsx # A/B testing
+│   │   └── reports/page.tsx     # Analytics reports
+│   └── (onboarding)/            # Onboarding flow
+│       ├── layout.tsx           # Onboarding layout
+│       ├── brands/page.tsx      # Brand setup
+│       └── connect-ads/page.tsx # Ad platform connection
+└── (public)/                    # Public pages
+    ├── layout.tsx               # Public layout
+    ├── page.tsx                 # Homepage
+    ├── contact/page.tsx         # Contact page
+    ├── about-us/page.tsx        # About us page
+    ├── ....                     # Other pages
+    └── privacy-policy/page.tsx  # Legal pages
+```
+
+### Layout Components
+
+#### Main Application Layout
+
+[app/(protected)/(brand)/layout.tsx](<mdc:%3Cmdc:app/(protected)/(brand)/layout.tsx%3E>) provides:
+
+- Sidebar navigation with [AppSidebar](mdc:src/components/AppSidebar.tsx)
+- Top navbar with [Navbar](mdc:src/components/layout/Navbar.tsx)
+- Proper content area with responsive design
+
+#### Container System
+
+Use the Container component for consistent content width:
+
+```tsx
+// ✅ GOOD: Using container system
+<Container size="large">
+  <div className="space-y-m">
+    <Text size="2xl" weight="bold">
+      Page Title
+    </Text>
+    <Text size="m">Page content with proper max-width</Text>
+  </div>
+</Container>
+```
+
+## State Management
+
+### Jotai Atoms
+
+The application uses Jotai for client-side state management:
+
+**Core Atoms:**
+
+- [src/atoms/core.ts](mdc:src/atoms/core.ts) - Core application state
+- [src/atoms/navbar.ts](mdc:src/atoms/navbar.ts) - Navigation state
+- [src/atoms/HydateAppAtoms.tsx](mdc:src/atoms/HydateAppAtoms.tsx) - Server state hydration
+
+**Usage Patterns:**
+
+```tsx
+// ✅ GOOD: Using Jotai atoms
+import { useAtom } from "jotai";
+import { sidebarCollapsedAtom } from "@/atoms/core";
+
+export function SidebarToggle() {
+  const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
+
+  return (
+    <Button
+      variant="default"
+      color="neutral"
+      size="xs"
+      onClick={() => setCollapsed(!collapsed)}
+    >
+      {collapsed ? "Expand" : "Collapse"}
+    </Button>
+  );
+}
+```
+
+## Creating New Components
+
+### Component Template
+
+When creating new components, follow this structure:
+
+```tsx
+// ✅ GOOD: New component template
+import { cn } from "@/utils";
+import { colors, sizes } from "@/components/styles";
+import type { ComponentProps } from "react";
+
+interface ComponentNameProps extends ComponentProps<"div"> {
+  variant?: "default" | "primary" | "secondary";
+  size?: "xs" | "s" | "m" | "l";
+  children: React.ReactNode;
+}
+
+export function ComponentName({
+  variant = "default",
+  size = "m",
+  className,
+  children,
+  ...props
+}: ComponentNameProps) {
+  return (
+    <div
+      className={cn(
+        // Base styles
+        "inline-flex items-center rounded-s",
+
+        // Size variants
+        sizes[size].px,
+        sizes[size].py,
+        sizes[size].text,
+
+        // Color variants
+        variant === "primary" && colors.primary.bg,
+        variant === "primary" && colors.primary.textOn,
+        variant === "secondary" && colors.secondary.bg,
+        variant === "secondary" && colors.secondary.textOn,
+
+        // Default variant
+        variant === "default" && colors.neutral.bgFaded,
+        variant === "default" && colors.neutral.text,
+
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
+```
+
+### Design Token Integration
+
+Always use the design token system:
+
+```tsx
+// ✅ GOOD: Using design tokens
+import { colors, sizes } from "@/components/styles";
+
+export function CustomButton({ size = "s", color = "primary" }) {
+  return (
+    <button
+      className={cn(
+        "rounded-s font-medium border border-[0.5px]",
+        sizes[size].px,
+        sizes[size].py,
+        sizes[size].text,
+        colors[color].bg,
+        colors[color].textOn,
+        colors[color].borderFaded
+      )}
+    >
+      Button
+    </button>
+  );
+}
+```
+
+### Component Variants
+
+Use semantic variants for consistency:
+
+```tsx
+// ✅ GOOD: Semantic variants
+const buttonVariants = cva(
+  "inline-flex items-center rounded-s font-medium border border-[0.5px]",
+  {
+    variants: {
+      variant: {
+        default: "bg-neutral-faded text-neutral border-neutral-faded",
+        solid: "bg-primary text-onprimary border-primary-faded",
+        outline: "text-primary border-primary-faded",
+      },
+      size: {
+        xs: "px-3xs py-3xs text-xs",
+        s: "px-xs py-xs text-s",
+        m: "px-s py-s text-m",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "s",
+    },
+  }
+);
+```
+
+## Styling Guidelines
+
+### Tailwind Classes Priority
+
+1. **Design Tokens First**: Use custom spacing, colors, and typography tokens
+2. **Semantic Classes**: Use semantic utility classes (e.g., `rounded-s`, `text-primary`)
+3. **Layout Classes**: Use flexbox, grid, and positioning utilities
+4. **Responsive Classes**: Use responsive prefixes for mobile-first design
+
+### Class Organization
+
+Organize classes in this order:
+
+```tsx
+className={cn(
+  // 1. Layout & positioning
+  "flex items-center justify-between",
+
+  // 2. Spacing (design tokens)
+  sizes.m.px,
+  sizes.m.py,
+  sizes.s.gap,
+
+  // 3. Typography (design tokens)
+  sizes.m.text,
+  colors.neutral.text,
+
+  // 4. Background & borders
+  colors.primary.bgFaded,
+  "border border-[0.5px]",
+  colors.neutral.borderFaded,
+
+  // 5. Interactive states
+  "hover:bg-primary-faded",
+  "focus:ring-1 focus:ring-primary",
+
+  // 6. Responsive
+  "md:flex-row lg:space-x-m",
+
+  // 7. Custom classes
+  className
+)}
+```
+
+### Dark Mode Support
+
+The design system automatically handles dark mode through CSS custom properties:
+
+```tsx
+// ✅ GOOD: Automatic dark mode
+<div className="bg-elevation-base text-neutral">
+  Content automatically adapts to theme
+</div>
+
+// ❌ AVOID: Manual dark mode classes
+<div className="bg-white dark:bg-gray-900 text-black dark:text-white">
+  Manual theme handling
+</div>
+```
+
+## Performance Guidelines
+
+### Component Optimization
+
+1. **Use React.memo()** for expensive components
+2. **Lazy load** heavy components with dynamic imports
+3. **Optimize re-renders** with proper dependency arrays
+4. **Use design tokens** to avoid style recalculations
+
+### Bundle Size
+
+1. **Tree-shake** unused design token imports
+2. **Use dynamic imports** for large component libraries
+3. **Minimize** custom CSS in favor of design tokens
+4. **Optimize** images and assets
+
+## Accessibility
+
+### Semantic HTML
+
+```tsx
+// ✅ GOOD: Semantic HTML
+<button className="btn-primary" aria-label="Save changes">
+  <SaveIcon className="w-s h-s" />
+  Save
+</button>
+
+// ❌ AVOID: Non-semantic elements
+<div className="btn-primary cursor-pointer" onClick={handleSave}>
+  Save
+</div>
+```
+
+### ARIA Support
+
+```tsx
+// ✅ GOOD: Proper ARIA attributes
+<Button
+  aria-expanded={isOpen}
+  aria-controls="dropdown-menu"
+  aria-label="Open menu"
+>
+  Menu
+</Button>
+```
+
+### Focus Management
+
+```tsx
+// ✅ GOOD: Focus management
+<Button
+  className="focus:ring-2 focus:ring-primary focus:ring-offset-2"
+  onFocus={handleFocus}
+>
+  Interactive Button
+</Button>
+```
+
+## Migration Guidelines
+
+### From Legacy to Modern Components
+
+1. **Replace hard-coded styles** with design tokens
+2. **Update color classes** to use semantic tokens
+3. **Convert spacing** to use the spacing scale
+4. **Update typography** to use the typography scale
+
+### Example Migration
+
+```tsx
+// ❌ OLD: Hard-coded styles
+<div className="bg-blue-500 text-white px-4 py-2 rounded text-sm">
+  Button
+</div>
+
+// ✅ NEW: Design tokens
+<Button variant="solid" color="primary" size="s">
+  Button
+</Button>
+```
+
+This comprehensive design system ensures consistency, maintainability, and scalability across the entire application while providing excellent developer experience and performance.
