@@ -1,0 +1,12 @@
+name = "lyberty-marketing"
+compatibility_date = "2024-01-01"
+
+[build]
+command = "pnpm build"
+pages_build_output_dir = "out"
+
+[env.production]
+name = "lyberty-marketing-production"
+
+[env.staging]
+name = "lyberty-marketing-staging" 
