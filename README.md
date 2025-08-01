@@ -7,10 +7,10 @@ This is a monorepo setup for the Lyberty project, allowing development and deplo
 Based on the specified monorepo-first architecture:
 
 - **apps/**: Runnable entry-points
-  - web/: Next.js 14 app (React/TS/Jotai)
+  - web/: Next.js 15 app (React/TS/Jotai)
   - ios-shell/: Tauri + SwiftUI for iOS
   - desktop/: Tauri for desktop (Mac/Win/Linux)
-  - marketing/: Static Next.js site
+  - marketing/: Static Next.js 15 site
 - **services/**: Deployable back-end
   - auth-worker/: Cloudflare Worker
   - export-service/: Rust + Axum for Fastly

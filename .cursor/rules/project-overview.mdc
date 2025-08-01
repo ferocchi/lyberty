@@ -1,8 +1,9 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: false
 ---
+
 # Adtracktiv - Tracking & Experimentation Platform
 
 ## Project Overview
@@ -11,7 +12,7 @@ Adtracktiv is a comprehensive tracking and experimentation platform that enables
 
 ## Core Architecture
 
-- **Frontend**: Next.js 14 with App Router, TypeScript, Tailwind CSS with custom design system
+- **Frontend**: Next.js 15 with App Router, TypeScript, Tailwind CSS with custom design system
 - **State Management**: Jotai for global state management
 - **Database**: Drizzle ORM with PostgreSQL for time-series metrics storage
 - **Authentication**: NextAuth.js with multiple OAuth providers (Google, Facebook)
@@ -202,7 +203,7 @@ interface Pathway {
 
 ### Frontend
 
-- **Next.js 14**: App Router with Server Components
+- **Next.js 15**: App Router with Server Components
 - **TypeScript**: Full type safety
 - **Tailwind CSS**: Custom design system with design tokens
 - **Jotai**: Global state management

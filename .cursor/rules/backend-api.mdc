@@ -6,7 +6,7 @@ alwaysApply: false
 
 ## Overview
 
-This application is a comprehensive tracking and experimentation platform built with Next.js 14+, featuring modern Server Actions, Drizzle ORM, and multiple third-party integrations. The backend architecture follows a serverless-first approach with robust data management and real-time capabilities.
+This application is a comprehensive tracking and experimentation platform built with Next.js 15+, featuring modern Server Actions, Drizzle ORM, and multiple third-party integrations. The backend architecture follows a serverless-first approach with robust data management and real-time capabilities.
 
 ## Core Architecture
 
@@ -26,7 +26,7 @@ This application is a comprehensive tracking and experimentation platform built 
 
 ### Core Server Actions
 
-All business logic is implemented as Server Actions using the modern Next.js 14+ pattern:
+All business logic is implemented as Server Actions using the modern Next.js 15+ pattern:
 
 #### Authentication Actions
 

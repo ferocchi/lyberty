@@ -6,7 +6,7 @@ This guide compiles all details from the setup process.
 
 repo-root/
 ├─ apps/ # Runnable entry-points
-│ ├─ web/ # Next.js 14 (React/TS/Jotai) - Main web app with Server Actions.
+│ ├─ web/ # Next.js 15 (React/TS/Jotai) - Main web app with Server Actions.
 │ ├─ ios-shell/ # Tauri-for-iOS + SwiftUI wrapper - Embeds web build.
 │ ├─ desktop/ # Tauri desktop (mac/Win/Linux) - Cross-platform desktop app.
 │ └─ marketing/ # Static Next.js site - For marketing pages, exports to static HTML.
@@ -58,7 +58,7 @@ iOS shell
 
 Web app
 
-- Full Next.js 14 with Server Actions for lightweight edge code.
+- Full Next.js 15 with Server Actions for lightweight edge code.
 - Uses Jotai atoms for local state — minimal bundle cost, fine for concurrent React.
 
 When you do need pure Swift
