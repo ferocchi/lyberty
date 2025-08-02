@@ -1,366 +1,320 @@
----
-description: Documents general Server Actions patterns used throughout the project Categorizes actions by functionality (tracking, experiments, rotators, reports, etc.e patterns, database operations, and error handling Includes session management and data processing best practices
-globs: 
-alwaysApply: false
----
 # Server Actions Patterns
 
 ## Overview
 
-This project uses Next.js Server Actions with traditional patterns (not next-safe-action) for server-side operations. All actions are defined in [src/server/actions/](mdc:src/server/actions/) and follow consistent patterns with proper authentication, error handling, and database operations using Drizzle ORM.
+This project uses Next.js 15+ Server Actions as the primary backend architecture. All business logic, data mutations, and API operations are implemented as Server Actions using modern patterns and best practices.
 
-## Action Categories
+## Core Architecture
 
-### Authentication & User Management
+### Server Actions Implementation
 
-Actions for user authentication and management:
-
-- `auth()` - Get authenticated session
-- `signOut()` - Sign out user
-- `signInWithCredentials()` - Sign in with email/password
-- `signInWithGoogle()` - OAuth with Google
-- `signInWithGithub()` - OAuth with GitHub
-- `createUser()` - Register new user
-- `verifyUser()` - Verify email with PIN code
-
-### Company Management
-
-Actions for multi-tenant company operations:
-
-- `createCompany()` - Create new company/brand
-- `addMemberToCompany()` - Invite user to company
-- `removeMemberFromCompany()` - Remove user from company
-- `getCompanyMembers()` - List company members
-- `getUserCompanies()` - Get user's companies
-- `updateCompanyLogo()` - Update company branding
-- `updateCompanyName()` - Update company name
-- `updateCompanySlug()` - Update company slug
-
-### Tracking & Analytics
-
-Actions for event tracking and data collection:
-
-- `addSource()` - Create new data source
-- `createWebsiteSource()` - Create website tracking source
-- `getSources()` - List company data sources
-- `getDestinations()` - List data destinations
-- `getTrackingHistory()` - Get tracking activity
-- `getViolations()` - Get data quality violations
-- `getSourcesMetrics()` - Get source performance metrics
-- `getDestinationsMetrics()` - Get destination performance metrics
-
-### Experiments & A/B Testing
-
-Actions for experimentation management:
-
-- `createExperiment()` - Create new A/B test
-- `editExperimentSettings()` - Update experiment configuration
-- `getAllFunnels()` - List conversion funnels
-- `createFunnel()` - Create new conversion funnel
-
-### Traffic Routing (Rotators)
-
-Actions for smart traffic routing:
-
-- `createHotLink()` - Create new traffic router
-- `updateHotLink()` - Update router configuration
-- `deleteHotLink()` - Delete traffic router
-- `syncHotLinks()` - Sync router to KV storage
-- `updateHotLinksKV()` - Update Cloudflare KV cache
-
-### Reports & Analytics
-
-Actions for reporting and data visualization:
-
-- `saveView()` - Save custom report view
-- `getViewById()` - Get specific report view
-- `getUserLastView()` - Get user's last viewed report
-
-### Access Token Management
-
-Actions for third-party API integrations:
-
-- `createAccessToken()` - Store encrypted API tokens
-
-## Response Patterns
-
-### Success Responses
+All Server Actions follow the `next-safe-action` v8 pattern for type safety and error handling:
 
 ```typescript
-return {
-  status: "success",
-  message: "Operation completed successfully"
-};
-```
+// Example Server Action
+import { authAction } from "@/lib/safe-action";
+import { z } from "zod";
 
-### Error Responses
-
-```typescript
-return {
-  status: "error",
-  message: "User-friendly error message"
-};
-```
-
-### Complex Responses
-
-```typescript
-return {
-  status: "success",
-  companyViolations,
-  message: `Found ${companyViolations.length} violations`
-};
-```
-
-### Form Action Responses
-
-```typescript
-return {
-  message: "Success message for form submission"
-};
-```
-
-## Database Operations
-
-### Drizzle ORM Integration
-
-All database operations use Drizzle ORM with proper error handling:
-
-```typescript
-const [insertedCompany] = await db
-  .insert(company)
-  .values({
-    name,
-    slug,
-  })
-  .returning({ id: company.id });
-```
-
-### Company-Scoped Queries
-
-Always scope database queries to the current company:
-
-```typescript
-const sources = await db
-  .select()
-  .from(sources)
-  .where(eq(sources.companyId, session.company.id));
-```
-
-### Complex Queries with Joins
-
-```typescript
-const result = await db
-  .select()
-  .from(user)
-  .leftJoin(view, eq(user.lastViewId, view.id))
-  .where(and(
-    eq(user.id, userId),
-    eq(view.companyId, companyId)
-  ));
-```
-
-## Error Handling Patterns
-
-### Try-Catch Blocks
-
-```typescript
-try {
-  // Action logic
-  return { status: "success", message: "Operation completed" };
-} catch (error) {
-  console.error("Error in action:", error);
-  return { status: "error", message: "Failed to perform action" };
-}
-```
-
-### Validation Errors
-
-Return user-friendly validation errors:
-
-```typescript
-const parsedData = CreateCompanySchema.safeParse(data);
-if (!parsedData.success) {
-  return { message: "Invalid fields." };
-}
-```
-
-### Database Constraint Errors
-
-Handle unique constraint violations:
-
-```typescript
-const existingCompanies = await db.query.company.findMany({
-  where: eq(company.slug, slug),
-});
-if (existingCompanies.length > 0) {
-  return { message: "This brand slug is already taken." };
-}
-```
-
-## Session Management
-
-### Session Access
-
-All authenticated actions access the session:
-
-```typescript
-const session = await auth();
-const userId = session.user.id;
-const companyId = session.company.id;
-```
-
-### Authentication Guards
-
-```typescript
-const session = await auth();
-if (!session) {
-  redirect("/login");
-}
-```
-
-### Company Context
-
-Always use company context for multi-tenancy:
-
-```typescript
-const companyId = session.company.id;
-// All database operations scoped to companyId
-```
-
-## Caching Patterns
-
-### Unstable Cache
-
-Use Next.js unstable_cache for frequently accessed data:
-
-```typescript
-const getCachedSources = unstable_cache(
-  async (companyId: string) => {
-    return await db.select().from(sources).where(eq(sources.companyId, companyId));
-  },
-  ["sources"],
-  { tags: ["sources"], revalidate: 120 }
-);
-```
-
-### Cache Invalidation
-
-Invalidate caches when data changes:
-
-```typescript
-revalidateTag("sources");
-revalidatePath("/tracking/sources");
-```
-
-## File Upload Handling
-
-### FormData Processing
-
-```typescript
-export async function updateCompanyLogo(formData: FormData) {
-  const session = await auth();
-  const file = formData.get("avatar") as File | null;
-
-  if (file) {
-    const uploadedUrl = await uploadImage(file);
-    // Update database with new logo URL
-  }
-}
-```
-
-## Redirect Patterns
-
-### Success Redirects
-
-```typescript
-redirect(`/${session.company.slug}/tracking/sources/${savedSource.name}`);
-```
-
-### Form Success Redirects
-
-```typescript
-redirect(`/${session.company.slug}/reports/${savedView.id}`);
-```
-
-## Data Processing
-
-### Complex Data Transformations
-
-```typescript
-const mappedPathways = hotLink.hotLinkToPathway.map(async (hotLinkToPathway) => {
-  const { pathway } = hotLinkToPathway;
-
-  if (pathway.experimentId) {
-    const variants = await db.query.experimentVariant.findMany({
-      with: { experiment: true },
-      where: eq(experimentVariant.experimentId, pathway.experimentId)
+export const createUser = authAction
+  .metadata({ actionName: "createUser" })
+  .inputSchema(
+    z.object({
+      email: z.string().email(),
+      name: z.string().min(1),
+    })
+  )
+  .action(async ({ parsedInput, ctx }) => {
+    // Business logic here
+    const user = await db.users.create({
+      data: parsedInput,
+      userId: ctx.user.id,
     });
-    return { pathway, variants };
-  }
 
-  return { pathway };
+    return { success: true, user };
+  });
+```
+
+### Action Categories
+
+#### Authentication Actions
+
+- User registration and login
+- OAuth provider integration
+- Session management
+- Password reset and email verification
+
+#### User Management
+
+- Profile updates and preferences
+- Account settings and security
+- User data management
+- Account deletion and cleanup
+
+#### Data Operations
+
+- CRUD operations for all entities
+- Batch operations and bulk updates
+- Data validation and transformation
+- File uploads and media management
+
+#### Business Logic
+
+- Complex workflows and processes
+- Integration with third-party services
+- Analytics and reporting
+- Notification and communication
+
+## Integration Patterns
+
+### Form Integration
+
+Server Actions integrate seamlessly with the universal form system:
+
+```typescript
+// In your form component
+import { useAction } from "next-safe-action/hooks";
+import { submitForm } from "@/app/actions";
+
+const { execute, result, status } = useAction(submitForm);
+
+// Handle form submission
+const handleSubmit = async (formData: FormData) => {
+  const result = await execute({
+    email: formData.get("email"),
+    name: formData.get("name"),
+  });
+
+  if (result.data) {
+    // Success handling
+  } else {
+    // Error handling
+  }
+};
+```
+
+### Real-time Updates
+
+Server Actions support optimistic updates and real-time data synchronization:
+
+```typescript
+// Optimistic update pattern
+const { execute } = useAction(updateUser, {
+  onSuccess: (data) => {
+    // Update local state optimistically
+    updateUserAtom.set(data.user);
+  },
+  onError: (error) => {
+    // Revert optimistic update
+    revertUserAtom.set(previousUser);
+  },
+});
+```
+
+## Error Handling
+
+### Standardized Error Responses
+
+All Server Actions return consistent error structures:
+
+```typescript
+interface ActionError {
+  code: string;
+  message: string;
+  details?: any;
+  timestamp: string;
+}
+```
+
+### Error Categories
+
+- **Validation Errors**: Input validation failures
+- **Authentication Errors**: Auth and permission issues
+- **Business Logic Errors**: Domain-specific rule violations
+- **System Errors**: Infrastructure and technical issues
+
+## Performance Optimization
+
+### Caching Strategy
+
+Server Actions support intelligent caching:
+
+```typescript
+import { unstable_cache } from "next/cache";
+
+export const getUserData = authAction.action(async ({ ctx }) => {
+  return await unstable_cache(
+    async () => {
+      return await db.users.findUnique({
+        where: { id: ctx.user.id },
+        include: { profile: true },
+      });
+    },
+    [`user-${ctx.user.id}`],
+    { revalidate: 300 } // 5 minutes
+  )();
 });
 ```
 
 ### Batch Operations
 
-```typescript
-for (const [index, pathway] of data.pathways.entries()) {
-  if (pathway.type === "landingPage") {
-    const [insertedPathway] = await db
-      .insert(pathwayTable)
-      .values({
-        landingPage: pathway.url,
-        companyId,
-      })
-      .returning({ id: pathwayTable.id });
+Efficient handling of multiple operations:
 
-    await db.insert(hotLinkToPathway).values({
-      hotLinkSlug: data.slug,
-      pathwayId: insertedPathway.id,
-      conditions: pathway.conditions,
-      priority: data.pathways.length - (index + 1),
+```typescript
+export const batchUpdateUsers = authAction
+  .inputSchema(
+    z.array(
+      z.object({
+        id: z.string(),
+        updates: z.object({}),
+      })
+    )
+  )
+  .action(async ({ parsedInput }) => {
+    return await db.$transaction(
+      parsedInput.map(({ id, updates }) =>
+        db.users.update({ where: { id }, data: updates })
+      )
+    );
+  });
+```
+
+## Security Patterns
+
+### Authentication & Authorization
+
+All Server Actions use the `authAction` wrapper for security:
+
+```typescript
+export const sensitiveOperation = authAction
+  .metadata({ actionName: "sensitiveOperation" })
+  .inputSchema(z.object({}))
+  .action(async ({ ctx }) => {
+    // ctx.user is guaranteed to exist
+    // ctx.session contains session data
+    // Perform authorized operations
+  });
+```
+
+### Input Validation
+
+Comprehensive validation using Zod schemas:
+
+```typescript
+const userSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(100),
+  age: z.number().min(18).max(120),
+  preferences: z
+    .object({
+      theme: z.enum(["light", "dark"]),
+      notifications: z.boolean(),
+    })
+    .optional(),
+});
+```
+
+## Testing Patterns
+
+### Unit Testing
+
+Server Actions can be tested in isolation:
+
+```typescript
+import { createUser } from "@/app/actions";
+
+describe("createUser", () => {
+  it("should create a user successfully", async () => {
+    const mockCtx = { user: { id: "test-user" } };
+    const result = await createUser.action({
+      parsedInput: { email: "test@example.com", name: "Test User" },
+      ctx: mockCtx,
     });
-  }
-}
+
+    expect(result.data).toBeDefined();
+  });
+});
+```
+
+### Integration Testing
+
+End-to-end testing with form integration:
+
+```typescript
+import { render, screen, fireEvent } from "@testing-library/react";
+import { useAction } from "next-safe-action/hooks";
+
+// Mock the action
+jest.mock("@/app/actions", () => ({
+  createUser: { action: jest.fn() },
+}));
+
+// Test form submission
+test("form submission calls server action", async () => {
+  render(<UserForm />);
+
+  fireEvent.click(screen.getByText("Submit"));
+
+  expect(createUser.action).toHaveBeenCalledWith({
+    parsedInput: { email: "test@example.com", name: "Test" },
+    ctx: expect.any(Object),
+  });
+});
 ```
 
 ## Best Practices
 
-1. **Always authenticate** using `auth()` function
-2. **Scope database queries** to the current company
-3. **Handle errors gracefully** with user-friendly messages
-4. **Log errors** for debugging purposes
-5. **Use structured responses** for consistency
-6. **Implement proper caching** with unstable_cache
-7. **Invalidate caches** when data changes
-8. **Use proper TypeScript types** for all parameters and returns
-9. **Validate input data** with Zod schemas
-10. **Test actions thoroughly** before deployment
-11. **Use transactions** for multi-step operations
-12. **Implement proper file upload handling**
-13. **Handle redirects appropriately** for form submissions
-14. **Use company context** for all multi-tenant operations
-15. **Cache frequently accessed data** to improve performance
+### Action Organization
 
-## File Organization
+- **Group related actions** in domain-specific files
+- **Use descriptive action names** that reflect the business operation
+- **Keep actions focused** on single responsibilities
+- **Document complex actions** with clear comments
 
-### Action Files
+### Performance Considerations
 
-- `auth.ts` - Authentication and user management
-- `company.ts` - Company and multi-tenant operations
-- `tracking.ts` - Event tracking and analytics
-- `experiment.ts` - A/B testing and experiments
-- `rotator.ts` - Traffic routing and hotlinks
-- `funnel.ts` - Conversion funnel management
-- `report.ts` - Reporting and data visualization
-- `accessToken.ts` - Third-party API token management
+- **Use caching** for read operations
+- **Implement optimistic updates** for better UX
+- **Batch operations** when possible
+- **Monitor action performance** and optimize slow operations
 
-### Common Patterns
+### Error Handling
 
-- All actions use "use server" directive
-- Import auth function for authentication
+- **Provide meaningful error messages** to users
+- **Log errors** for debugging and monitoring
+- **Implement retry logic** for transient failures
+- **Handle edge cases** gracefully
+
+### Security
+
+- **Validate all inputs** using Zod schemas
+- **Use authentication** for all sensitive operations
+- **Implement rate limiting** for public actions
+- **Sanitize data** before database operations
+
+## Migration Guide
+
+### From API Routes
+
+1. **Identify API routes** that need migration
+2. **Convert to Server Actions** using the patterns above
+3. **Update client code** to use `useAction` hooks
+4. **Test thoroughly** for functionality and performance
+5. **Remove old API routes** once migration is complete
+
+### From Custom Hooks
+
+1. **Replace custom hooks** with Server Actions
+2. **Update form components** to use `useAction`
+3. **Implement optimistic updates** where beneficial
+4. **Add proper error handling** and loading states
+
+## References
+
+- [Next.js Server Actions Documentation](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions)
+- [next-safe-action Documentation](https://next-safe-action.vercel.app/)
+- [Universal Form System](mdc:universal-form-system.mdc)
+- [Backend API Architecture](mdc:backend-api.mdc)
+
 - Use Drizzle ORM for database operations
 - Implement proper error handling
 - Use revalidatePath/revalidateTag for cache invalidation

@@ -1,9 +1,3 @@
----
-description:
-globs:
-alwaysApply: false
----
-
 # Universal Form System Migration Guide
 
 ## Overview
@@ -117,18 +111,17 @@ This guide provides a step-by-step process for migrating any form in the codebas
 
 - **Test all migrated forms** for:
   - Correct state and navigation
-  - Validation and error handling
+  - Validation behavior
   - Server action integration
-  - Performance (minimal re-renders, fast updates)
-  - Accessibility (semantic HTML, ARIA, keyboard navigation)
-- **Write unit and integration tests** as needed.
+  - Performance and accessibility
+- **Update tests** to use the new form system patterns.
 
 ---
 
 ## 8. Document and Maintain
 
-- **Document your form configs and any custom field components.**
-- **Update README and rules as needed.**
+- **Document your form configs** and any custom field components.
+- **Update README and rules** as needed.
 - **Reference the [Universal Form System Architecture](mdc:universal-form-system.mdc) rule for future contributors.**
 
 ---
@@ -140,6 +133,11 @@ This guide provides a step-by-step process for migrating any form in the codebas
 - [src/components/Form/utils.ts](mdc:src/components/Form/utils.ts)
 - [src/components/Form/validation.ts](mdc:src/components/Form/validation.ts)
 - [src/components/Form/MultiStepForm.tsx](mdc:src/components/Form/MultiStepForm.tsx)
+- [app/(public)/form5/formConfig.tsx](<mdc:app/(public)/form5/formConfig.tsx>)
+- [app/actions.ts](mdc:app/actions.ts)
+- [modern-nextjs-data-fetching.mdc](mdc:modern-nextjs-data-fetching.mdc)
+- [next-safe-action-hooks-usage.mdc](mdc:next-safe-action-hooks-usage.mdc)
+
 - [app/(public)/form5/formConfig.tsx](<mdc:app/(public)/form5/formConfig.tsx>)
 - [app/actions.ts](mdc:app/actions.ts)
 - [modern-nextjs-data-fetching.mdc](mdc:modern-nextjs-data-fetching.mdc)
