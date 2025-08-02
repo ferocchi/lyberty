@@ -1,10 +1,45 @@
-# Server Actions Patterns
+# Server Actions - Complete Guide
 
 ## Overview
 
-This project uses Next.js 15+ Server Actions as the primary backend architecture. All business logic, data mutations, and API operations are implemented as Server Actions using modern patterns and best practices.
+This project uses Next.js 15+ Server Actions as the primary backend architecture with `next-safe-action` v8 for type safety and error handling. All business logic, data mutations, and API operations are implemented as Server Actions using modern patterns and best practices.
 
 ## Core Architecture
+
+### Safe Action Client Setup
+
+The safe action clients are defined in [lib/safe-action.ts](mdc:lib/safe-action.ts):
+
+```typescript
+// Base client for non-authenticated actions
+const actionClient = createSafeActionClient({
+  defineMetadataSchema() {
+    return z.object({
+      actionName: z.string(),
+    });
+  },
+  handleServerError(e) {
+    console.error("Action error:", e.message);
+    if (e instanceof ActionError) {
+      return e.message;
+    }
+    return DEFAULT_SERVER_ERROR_MESSAGE;
+  },
+});
+
+// Auth client with authentication middleware
+export const authAction = actionClient.use(async ({ next }) => {
+  try {
+    const session = await auth();
+    if (!session) {
+      throw new ActionError("Unauthorized");
+    }
+    return next({ ctx: { session } });
+  } catch (error) {
+    throw new ActionError("Authentication failed");
+  }
+});
+```
 
 ### Server Actions Implementation
 
@@ -64,6 +99,118 @@ export const createUser = authAction
 - Analytics and reporting
 - Notification and communication
 
+## Client-Side Integration
+
+### `useAction` Hook
+
+Use for managing action state and pending states. Import from next-safe-action:
+
+```typescript
+"use client";
+import { useAction } from "next-safe-action/hooks";
+import { submitForm } from "@/app/actions";
+
+export function FormComponent() {
+  const { execute, result, status } = useAction(submitForm);
+
+  const handleSubmit = async (formData: FormData) => {
+    const result = await execute({
+      email: formData.get("email"),
+      name: formData.get("name"),
+    });
+
+    if (result.data) {
+      // Success handling
+    } else {
+      // Error handling
+    }
+  };
+
+  const isLoading = status === "executing";
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* form fields */}
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? "Submitting..." : "Submit"}
+      </button>
+      {result?.data?.success && <SuccessMessage />}
+      {result?.data?.error && <ErrorMessage error={result.data.error} />}
+    </form>
+  );
+}
+```
+
+### `useActionState` Hook (for stateful actions)
+
+Use when you need to access previous action results. Import from React (not next-safe-action):
+
+```typescript
+"use client";
+import { useActionState } from "react";
+import { incrementCounter } from "@/app/actions";
+
+export function Counter() {
+  const [state, action, pending] = useActionState(incrementCounter, 0);
+
+  const handleIncrement = () => {
+    // Call the action directly with arguments
+    action({ increment: 1 });
+  };
+
+  return (
+    <div>
+      <p>Count: {state}</p>
+      <Button onClick={handleIncrement} disabled={pending}>
+        {pending ? "Incrementing..." : "Increment"}
+      </Button>
+    </div>
+  );
+}
+```
+
+### `useOptimisticAction` Hook (for optimistic updates)
+
+Use for optimistic updates that don't wait for server response:
+
+```typescript
+"use client";
+import { useOptimisticAction } from "next-safe-action/hooks";
+import { addTodo, type Todo } from "@/app/actions";
+
+export function TodosBox({ todos }: { todos: Todo[] }) {
+  const { execute, result, optimisticState } = useOptimisticAction(addTodo, {
+    currentState: { todos },
+    updateFn: (state, newTodo) => {
+      return {
+        todos: [...state.todos, newTodo],
+      };
+    },
+  });
+
+  return (
+    <div>
+      <button
+        onClick={() => {
+          execute({
+            id: crypto.randomUUID(),
+            body: "New Todo",
+            completed: false,
+          });
+        }}
+      >
+        Add Todo
+      </button>
+
+      {/* Display optimistic state */}
+      {optimisticState.todos.map((todo) => (
+        <TodoItem key={todo.id} todo={todo} />
+      ))}
+    </div>
+  );
+}
+```
+
 ## Integration Patterns
 
 ### Form Integration
@@ -112,6 +259,12 @@ const { execute } = useAction(updateUser, {
 
 ## Error Handling
 
+### Custom Error Class
+
+```typescript
+class ActionError extends Error {}
+```
+
 ### Standardized Error Responses
 
 All Server Actions return consistent error structures:
@@ -122,6 +275,18 @@ interface ActionError {
   message: string;
   details?: any;
   timestamp: string;
+}
+```
+
+### Error Handling in Actions
+
+```typescript
+try {
+  // Action logic
+  return { success: true, data };
+} catch (error) {
+  console.error("Error in action:", error);
+  return { error: "User-friendly error message" };
 }
 ```
 
@@ -314,8 +479,8 @@ test("form submission calls server action", async () => {
 - [next-safe-action Documentation](https://next-safe-action.vercel.app/)
 - [Universal Form System](mdc:universal-form-system.mdc)
 - [Backend API Architecture](mdc:backend-api.mdc)
+  description:
+  globs:
+  alwaysApply: false
 
-- Use Drizzle ORM for database operations
-- Implement proper error handling
-- Use revalidatePath/revalidateTag for cache invalidation
-- Scope operations to company context
+---

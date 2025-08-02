@@ -1,10 +1,49 @@
-# Universal Form System Migration Guide
+# Universal Form System Architecture
 
 ## Overview
 
-This guide provides a step-by-step process for migrating any form in the codebase to the universal, hyper-performant form system based on [src/components/Form/](mdc:src/components/Form). It ensures all forms use the shared types, state management, validation, and Next.js 15+ server actions patterns as described in the [Universal Form System Architecture](mdc:universal-form-system.mdc) rule.
+This project uses a universal, hyper-performant form system based on the components and patterns in [src/components/Form/](mdc:src/components/Form). All advanced forms should use this system for consistency, extensibility, and performance.
+
+## Core Files
+
+- [src/components/Form/types.ts](mdc:src/components/Form/types.ts): Core types (`FormType`, `FormStepType`, `FormState`, etc.)
+- [src/components/Form/context.tsx](mdc:src/components/Form/context.tsx): Jotai-based context, state management, and provider
+- [src/components/Form/utils.ts](mdc:src/components/Form/utils.ts): Utility functions for form operations
+- [src/components/Form/validation.ts](mdc:src/components/Form/validation.ts): Centralized validation logic
+- [src/components/Form/MultiStepForm.tsx](mdc:src/components/Form/MultiStepForm.tsx): Main form component
+
+## Key Patterns
+
+- **All form configs must use `FormType` and each step must use `FormStepType` with an `id` field.**
+- State is managed with Jotai atoms, split by form, step, and field for fine-grained reactivity.
+- Validation is centralized and extensible, supporting async and schema-based rules.
+- Multi-step navigation, conditional logic, and branching are supported out of the box.
+- Atoms can be persisted to localStorage or server for draft saving and restoration.
+- Supports optimistic updates, server actions, and Next.js 15+ streaming patterns.
+- Custom field components and async validation are easily integrated.
+
+## Example Config
+
+See [app/(public)/form5/formConfig.tsx](<mdc:app/(public)/form5/formConfig.tsx>) for a correct, universal form config using `FormType` and step/field `id`s.
+
+## When to Use Other Systems
+
+- For simple, flat forms, you may use [src/components/ui/Form.tsx](mdc:src/components/ui/Form.tsx) (React Hook Form integration).
+- For all multi-step, dynamic, or advanced forms, use the universal system.
+
+## Performance & Extensibility
+
+- Jotai atoms ensure minimal re-renders and high performance.
+- Centralized validation and navigation logic for maintainability.
+- Easily supports new field types, async validation, and server-driven flows.
 
 ---
+
+# Migration Guide
+
+## Overview
+
+This guide provides a step-by-step process for migrating any form in the codebase to the universal, hyper-performant form system based on [src/components/Form/](mdc:src/components/Form). It ensures all forms use the shared types, state management, validation, and Next.js 15+ server actions patterns.
 
 ## 1. Audit and Prepare
 
@@ -12,8 +51,6 @@ This guide provides a step-by-step process for migrating any form in the codebas
 - **Determine form complexity:**
   - Use the universal system for all multi-step, dynamic, or advanced forms.
   - Use [src/components/ui/Form.tsx](mdc:src/components/ui/Form.tsx) (React Hook Form) for simple, flat forms only.
-
----
 
 ## 2. Update Form Configs to Universal Types
 
@@ -25,8 +62,6 @@ This guide provides a step-by-step process for migrating any form in the codebas
   2. Ensure each step is an object with an `id` property and uses `FormStepType`.
   3. Each field must have an `id` and use the shared field schema.
   4. Remove any custom/legacy types and replace with imports from [src/components/Form/types.ts](mdc:src/components/Form/types.ts).
-
----
 
 ## 3. Refactor State Management
 
@@ -49,15 +84,11 @@ This guide provides a step-by-step process for migrating any form in the codebas
 
 - **Persist state** using `atomWithStorage` if needed for drafts or recovery.
 
----
-
 ## 4. Update Validation Logic
 
 - **Remove custom validation logic** and use the centralized system in [src/components/Form/validation.ts](mdc:src/components/Form/validation.ts).
 - **Define validation rules in your field schemas.**
 - **Async validation** is supported via the shared system.
-
----
 
 ## 5. Refactor Field and Step Components
 
@@ -67,8 +98,6 @@ This guide provides a step-by-step process for migrating any form in the codebas
   - Example: `{ content: <MyCustomField /> }` in a step config.
 - **Navigation:**
   - Use the built-in navigation and branching logic from the universal system.
-
----
 
 ## 6. Integrate Server Actions (Next.js 15+)
 
@@ -105,8 +134,6 @@ This guide provides a step-by-step process for migrating any form in the codebas
 
 - **See the [Modern Next.js Data Fetching Patterns](mdc:modern-nextjs-data-fetching.mdc) and [next-safe-action Hooks Usage](mdc:next-safe-action-hooks-usage.mdc) rules for full details.**
 
----
-
 ## 7. Test and Validate
 
 - **Test all migrated forms** for:
@@ -116,15 +143,11 @@ This guide provides a step-by-step process for migrating any form in the codebas
   - Performance and accessibility
 - **Update tests** to use the new form system patterns.
 
----
-
 ## 8. Document and Maintain
 
 - **Document your form configs** and any custom field components.
 - **Update README and rules** as needed.
 - **Reference the [Universal Form System Architecture](mdc:universal-form-system.mdc) rule for future contributors.**
-
----
 
 ## References
 
@@ -137,8 +160,8 @@ This guide provides a step-by-step process for migrating any form in the codebas
 - [app/actions.ts](mdc:app/actions.ts)
 - [modern-nextjs-data-fetching.mdc](mdc:modern-nextjs-data-fetching.mdc)
 - [next-safe-action-hooks-usage.mdc](mdc:next-safe-action-hooks-usage.mdc)
+  description:
+  globs:
+  alwaysApply: false
 
-- [app/(public)/form5/formConfig.tsx](<mdc:app/(public)/form5/formConfig.tsx>)
-- [app/actions.ts](mdc:app/actions.ts)
-- [modern-nextjs-data-fetching.mdc](mdc:modern-nextjs-data-fetching.mdc)
-- [next-safe-action-hooks-usage.mdc](mdc:next-safe-action-hooks-usage.mdc)
+---

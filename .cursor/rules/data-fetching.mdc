@@ -1,3 +1,105 @@
+# Modern Next.js Data Fetching Patterns
+
+## Overview
+
+This project uses modern Next.js 15+ patterns for data fetching and state management. All API routes (except auth) have been migrated to Server Actions using [lib/safe-action.ts](mdc:lib/safe-action.ts).
+
+## Data Fetching Hierarchy (Best to Worst)
+
+### 1. Server Components with Direct Fetching (Best)
+
+Use for initial page loads and static data:
+
+```typescript
+// ✅ GOOD: Server Component with direct data fetching
+export default async function DashboardPage() {
+  const session = await auth();
+  const googleAdsData = await getUserGoogleAdsData(session.user.id);
+
+  return (
+    <div>
+      <DashboardMetrics data={googleAdsData} />
+      <GoogleAdsAccountSelector initialAccounts={googleAdsData.accounts} />
+    </div>
+  );
+}
+```
+
+### 2. Server Actions with `useAction` (Best for mutations)
+
+Use for user interactions and data updates:
+
+```typescript
+"use client";
+import { useAction } from "next-safe-action/hooks";
+import { selectGoogleAdsAccount } from "@/app/actions";
+
+export function AccountSelector() {
+  const { execute, result, status } = useAction(selectGoogleAdsAccount);
+
+  const handleSelect = (accountId: string) => {
+    execute({ accountId });
+  };
+
+  return (
+    <Select onValueChange={handleSelect} disabled={status === "executing"}>
+      {/* options */}
+    </Select>
+  );
+}
+```
+
+### 3. React's `use()` Hook (Best for streaming)
+
+Use for conditional data fetching and streaming:
+
+```typescript
+"use client";
+import { use } from "react";
+
+export function GoogleAdsAccountSelector() {
+  const accountsPromise = getGoogleAdsAccounts({});
+  const accounts = use(accountsPromise);
+
+  return <Select>{/* render accounts */}</Select>;
+}
+```
+
+### 4. Custom Hooks with SWR/TanStack Query (Best for real-time)
+
+Use only when you need frequent updates or complex caching:
+
+```typescript
+import useSWR from "swr";
+
+export function useGoogleAdsAccounts() {
+  const { data, error, mutate } = useSWR(
+    "google-ads-accounts",
+    () => getGoogleAdsAccounts({}),
+    { refreshInterval: 30000 }
+  );
+
+  return {
+    accounts: data?.data?.accounts || [],
+    error,
+    isLoading: !data && !error,
+  };
+}
+```
+
+### 5. useEffect (Avoid - Last Resort)
+
+Only use for browser-only APIs or when no other pattern works:
+
+```typescript
+// ❌ AVOID: Traditional useEffect pattern
+useEffect(() => {
+  fetchData();
+}, []);
+```
+
+---
+
 # Backend API Architecture
 
 ## Overview
@@ -219,5 +321,49 @@ interface ApiError {
 - **Error Handling**: Consistent error handling patterns
 - **Type Safety**: Full TypeScript support for all operations
 
-- **CDN**: Static asset delivery optimization
-- **Monitoring**: Real-time performance tracking
+## Best Practices
+
+### Data Fetching
+
+1. **Use Server Components** for initial data loading
+2. **Use Server Actions** for mutations and user interactions
+3. **Implement proper caching** strategies
+4. **Handle loading and error states** gracefully
+5. **Use optimistic updates** for better UX
+
+### API Design
+
+1. **Follow RESTful principles** for API design
+2. **Use consistent error responses** across all endpoints
+3. **Implement proper validation** for all inputs
+4. **Use pagination** for large datasets
+5. **Version APIs** for backward compatibility
+
+### Performance
+
+1. **Optimize database queries** with proper indexing
+2. **Use connection pooling** for database connections
+3. **Implement caching** at multiple levels
+4. **Monitor performance metrics** continuously
+5. **Use CDN** for static assets
+
+### Security
+
+1. **Validate all inputs** using Zod schemas
+2. **Implement proper authentication** and authorization
+3. **Use HTTPS** for all communications
+4. **Encrypt sensitive data** at rest and in transit
+5. **Implement rate limiting** to prevent abuse
+
+## References
+
+- [Next.js Data Fetching Documentation](https://nextjs.org/docs/app/building-your-application/data-fetching)
+- [Server Actions Documentation](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions)
+- [React use() Hook Documentation](https://react.dev/reference/react/use)
+- [SWR Documentation](https://swr.vercel.app/)
+- [TanStack Query Documentation](https://tanstack.com/query/latest)
+  description:
+  globs:
+  alwaysApply: false
+
+---
