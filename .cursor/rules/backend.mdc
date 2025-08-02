@@ -1,0 +1,350 @@
+---
+description: backend logic, db schema & apis. full architecture of the backend behind all logic
+alwaysApply: false
+---
+
+# Backend Logic, DB Schema & APIs – Lyberty.ai
+
+_Last updated: 2 Aug 2025_
+
+> See also: [`infra.mdc`](../infrastructure_overview.mdc) for hosting/deployment, [`overview.mdc`](../overview.mdc) for system map.
+
+---
+
+## 1 Backend Purpose
+
+The backend drives all strategic and operational logic of Lyberty.ai:
+
+- Real-time event ingestion, routing, and attribution
+- A/B/n experiment management with traffic control
+- Funnel and step-based behavioral analytics
+- Feature flag delivery and variant testing
+- Edge-first decisions + globally consistent state
+
+The architecture is **multi-tenant, ultra-performant, edge-native**, and built for both human and machine interfaces (UI + API).
+
+Framework Features – Frontend Apps
+
+App Static Export Server Actions Edge Middleware Server Components Offline SEO & Social Dynamic Routes
+Marketing ❌ ✅ ✅ ✅ ❌ ✅ ✅
+Web App ✅ ✅ ❌ ✅ (limited) ✅ ❌ ✅
+
+These modes determine which API features are available via next-safe-actions, and whether routing or A/B logic executes on the edge or at client-side load time.
+
+---
+
+## 2 Server Actions & Orchestration
+
+All logic is implemented as **typed Next.js Server Actions** via `next-safe-actions` and split by domain:
+
+### 2.1 Authentication
+
+- `signIn()`, `signOut()`, `refreshToken()` – via Auth.js v5
+- `getSession()`, `getCompanyContext()` – token & RBAC context
+
+### 2.2 Tracking & Event Flow
+
+- `trackEvent()` – schema-validated event write (ingest to PG or D1)
+- `recordViolation()` – data quality flags (missing source, schema invalid, blocked payload)
+- `flushToDestination()` – async fan-out to GA4, TikTok, Meta, etc
+
+### 2.3 Experiments & Variants
+
+- `createExperiment()`, `editVariants()`, `endExperiment()`
+- `updateHotLinksKV()` – sync routing table to Cloudflare KV
+- `getVariantAllocation()` – per-session edge decision, with optional Durable Object counter
+
+### 2.4 Funnels & Steps
+
+- `defineFunnel()`, `logStep()`
+- `analyzeConversionPath()` – drop-off and bottleneck analysis
+- `recommendTests()` – rule-based test suggestions (future ML)
+
+### 2.5 Configuration
+
+- `updateFeatureFlags()`, `pushFlagsToKV()`
+- `getEdgeFlags()` – used by CDN, Workers, and UI hydration
+
+---
+
+## 3 Database Schema (Supabase PG + D1)
+
+Postgres is the core RDB; D1 stores edge-local data.
+
+### 3.1 Core Relational Tables (Postgres)
+
+```ts
+company(id, name, domain, plan, settings);
+user(id, email, name, avatar, company_id, roles);
+session(id, user_id, expires_at);
+source(id, type, delivery_mode, hostname, schema, company_id);
+destination(id, platform, pixel_id, mappings, company_id);
+experiment(id, name, status, allocation, filters, company_id);
+variant(id, experiment_id, name, weight, url, flags);
+funnel(id, company_id, name, description);
+funnel_step(id, funnel_id, name, conditions, constraint);
+event(id, company_id, pseudo_id, session_id, name, timestamp, metadata_json);
+metric(id, key, value, experiment_id, timestamp);
+violation(id, company_id, type, event_id, timestamp);
+```
+
+### 3.2 Edge Tables (Cloudflare D1)
+
+```ts
+temp_event(id, session_id, payload, created_at);
+consent(id, pseudo_id, consent_status, timestamp);
+kvs(company_id, namespace, key, value);
+```
+
+D1 is always read/write from Workers; PG is sync’d async where needed.
+
+---
+
+## 4 Data Contracts & Types
+
+All tracking and logic types are Zod-validated.
+
+### 4.1 Event Structure
+
+```ts
+interface Event {
+  id: string;
+  name: string;
+  pseudoId: string;
+  sessionId: string;
+  pageUrl: string;
+  referrer: string;
+  timestamp: string;
+  device: { brand: string; type: string; browser: string };
+  geo: { city: string; country: string };
+  utm: { source: string; medium: string; campaign: string };
+  experiment: { hotLinkSlug: string; pathwayId: string };
+}
+```
+
+### 4.2 Experiment Logic
+
+```ts
+interface Variant {
+  id: string;
+  name: string;
+  url: string;
+  weight: number; // 0–100
+  flags: Record<string, string>; // feature toggles
+}
+```
+
+---
+
+## 5 Routing Engine
+
+Experiment and hotLink routing decisions are made at edge via:
+
+- **KV cache**: company → variants → flags (cold start \~50 ms)
+- **Durable Objects**: when p95 allocation accuracy matters or when variant reallocation occurs in real time
+- **Cloudflare Queues**: async propagation to destinations
+
+Routing logic supports:
+
+- Conditional targeting (filter-based)
+- Sticky variants per session
+- Performance-based realloc (future)
+
+---
+
+## 6 Data Quality Layer
+
+Violations are tracked for:
+
+- Missing or unverified source
+- Invalid payload schema
+- Blocked delivery to destination
+- Unknown experiment references
+
+A Worker Cron every 5 min syncs violations to Postgres for dashboard visibility.
+
+---
+
+## 7 Public API (Planned Q4 2025)
+
+- `POST /track` – client-side and server-side event ingestion
+- `POST /session` – bootstrap pseudoId and context
+- `GET /variant/:slug` – return routed variant with flag payload
+- `POST /conversion` – report step or goal completion
+
+All endpoints will support:
+
+- Edge auth (API Key or Signed Session)
+- CORS
+- Rate-limiting via Workers
+
+---
+
+## 8 Security
+
+- **Multi-tenant isolation** via company_id in every query
+- **Zod validation** on all inputs
+- **Auth.js** for access control + RBAC
+- **GDPR deletion** cascades from Workers (D1 → PG → R2)
+
+---
+
+## 9 Integration Patterns
+
+- **Meta / TikTok / GA4 / Google Ads** – pixels or server-side
+- **Webhook builder** – customizable payload per event (Q4)
+- **Feature flag delivery** – context-aware via Workers + KV
+- **Creative uploads** – handled via R2 with signed URLs
+
+---
+
+## 10 Reference Template Functions & Patterns
+
+Below are reference implementations for key logic blocks. All live in `src/server/actions` unless noted.
+
+### 10.1 Experiment Variant Editor
+
+```ts
+// src/server/actions/experimentVariant.ts
+export async function editExperimentVariants(
+  data: ExperimentVariantWithFlags[]
+) {
+  // 1️⃣ Validate total weight
+  const totalPercentage = data.reduce((acc, v) => acc + v.weight, 0);
+  if (totalPercentage !== 100) {
+    return { status: "error", message: "Total weight should be 100" };
+  }
+
+  // 2️⃣ Persist
+  await Promise.all(
+    data.map(async (variant) =>
+      db
+        .update(experimentVariant)
+        .set({ weight: variant.weight, url: variant.url })
+        .where(eq(experimentVariant.id, variant.id))
+    )
+  );
+}
+```
+
+### 10.2 Source‑Metrics Cache
+
+```ts
+// src/server/actions/tracking.ts
+const getCachedSourcesMetrics = unstable_cache(
+  async (companyId: string) => {
+    const events = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(event)
+      .where(
+        and(
+          eq(event.companyId, companyId),
+          gte(event.timestamp, new Date(Date.now() - 86_400_000))
+        )
+      );
+    return { status: "success", events };
+  },
+  ["sources-metrics"],
+  { tags: ["sources-metrics"], revalidate: 120 }
+);
+```
+
+### 10.3 HotLink → Pathway KV Builder (Routing)
+
+```ts
+// src/server/actions/rotator.ts
+export async function updateHotLinksKV(companyId: string) {
+  const hotLinks = await db.query.hotLink.findMany({
+    with: {
+      hotLinkToPathway: {
+        with: {
+          pathway: {
+            with: {
+              experiment: true,
+              pathwayToFlag: { with: { flag: { with: { feature: true } } } },
+            },
+          },
+        },
+      },
+    },
+    where: eq(hotLink.companyId, companyId),
+  });
+
+  const kvValue: Record<string, unknown> = {};
+  // …build routing map (see legacy doc) …
+  await putToKv("HOTLINKS", companyId, kvValue);
+}
+```
+
+### 10.4 Violation Fetcher
+
+```ts
+// src/server/actions/tracking.ts
+export async function getViolations(companyId: string) {
+  const violationsList = await db
+    .select()
+    .from(violations)
+    .where(
+      and(
+        eq(violations.companyId, companyId),
+        inArray(violations.violationType, [
+          "missing_source",
+          "inexistent_source",
+        ])
+      )
+    )
+    .orderBy(desc(violations.createdAt));
+  return { status: "success", companyViolations: violationsList };
+}
+```
+
+### 10.5 Cached Sources Helper
+
+```ts
+const getCachedSources = unstable_cache(
+  async (companyId: string) =>
+    db.select().from(sources).where(eq(sources.companyId, companyId)),
+  ["sources"],
+  { tags: ["sources"], revalidate: 120 }
+);
+```
+
+### 10.6 Page‑Experiment KV Pusher
+
+```ts
+export async function updatePageExperimentKv({
+  companyId,
+}: {
+  companyId: string;
+}) {
+  const experiments = await db.query.experiment.findMany({
+    with: {
+      experimentVariant: {
+        with: {
+          experimentVariantToFlag: {
+            with: { flag: { with: { feature: true } } },
+          },
+        },
+      },
+    },
+    where: and(
+      eq(experiment.companyId, companyId),
+      eq(experiment.enablePageExperiment, true)
+    ),
+  });
+
+  const kvPayload: Record<string, unknown> = {};
+  // …aggregate variants, flags, filters…
+  await putToKv("PAGE_EXPERIMENTS", companyId, kvPayload);
+}
+```
+
+> **Note:** helper `putToKv()` wraps Cloudflare KV REST with retries & metrics.
+
+---
+
+_These templates ensure parity with the legacy business‑logic document and give devs drop‑in examples._
+
+---
+
+Lyberty’s backend now captures both **architecture** and **reference code**—full fidelity with prior specs.

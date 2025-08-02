@@ -1,0 +1,149 @@
+---
+description: overview of lyberty
+alwaysApply: false
+---
+
+# Lyberty.ai – Overview
+
+_Last updated: 2 Aug 2025_
+
+> **Docs map** • [`backend.mdc`](../backend_api_architecture.mdc) – logic & DB schema • [`infra.mdc`](../infrastructure_overview.mdc) – hosting & ops
+
+---
+
+## 1 What Is Lyberty?
+
+Lyberty.ai is an **AI venture-operating system** that automates everything from strategic decomposition to funnel deployment, attribution, and experimentation. Founders and growth teams use it to go from idea to revenue without juggling 6+ tools or sacrificing clarity.
+
+**Core promise:** _leverage, not latency._ Teams focus on creativity, relationships, and vision—while Lyberty handles the complexity beneath.
+
+Lyberty isn't just software. It's a **system of momentum** designed for those building what others think is impossible.
+
+---
+
+## 2 Mission & Vision
+
+|             |                                                                                                                                                                                                     |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Mission** | _Foster human innovation by removing the bottlenecks that distract us from what matters most—relationships and creativity._                                                                         |
+| **Vision**  | A world where builders spin up validated funnels in minutes, learn in real-time, and scale globally without tech ops overhead. Lyberty turns strategic clarity into structured execution—instantly. |
+
+---
+
+## 3 Product Capabilities
+
+1. **Real-Time Tracking** – sub-second ingest, edge enrichment, GDPR-safe.
+2. **Experiment Engine** – unlimited variants, KV- or DO-backed routing, stats auto-significance.
+3. **Smart Traffic Router** – performance-based allocation, rules, multi-dest pixel fan-out.
+4. **Funnel Intelligence** – cross-step drop-off detection, auto-suggested tests.
+5. **Ops Hub** – strategy builder, task orchestration, creative OS.
+6. **Contextual Creative Layer** – generate, test, and adapt messaging with real-time learning loops.
+
+Lyberty is engineered to turn **insight into impact**, fast.
+
+---
+
+## 4 High-Level Architecture
+
+```mermaid
+graph TB
+  subgraph Frontend
+    A[Marketing Site<br>(Next 15 – Edge SSR)]
+    B[Web App<br>(Next 15 – Static)]
+    C[Tauri Wrapper<br>(Desktop / iOS)]
+  end
+  subgraph Edge Compute
+    W1[Workers (Node)]
+    W2[Workers (Rust + WASM)]
+    DO[Durable Objects]
+  end
+  subgraph Data
+    D1[(Cloudflare D1)]
+    PG[(Supabase Postgres)]
+    R2[(Cloudflare R2)]
+    Oriole[[OrioleDB / TigerDB (soon)]]
+  end
+  A & B --> W1
+  C --> B
+  W1 -->|hot data| D1
+  W1 -->|core| PG
+  W1 -->|assets| R2
+  W1 -->|future| Oriole
+  W1 -. stats .-> DO
+```
+
+_See_ **infra.mdc** for full POP flow and SLOs.
+
+---
+
+## 5 Tech-Stack Snapshot (Aug 2025)
+
+| Layer                | Choice                                                           | Rationale                                          |
+| -------------------- | ---------------------------------------------------------------- | -------------------------------------------------- |
+| **UI**               | Next.js 15, Tailwind, Proprietary DS                             | SSR for marketing, static export for app; rapid DX |
+| **Desktop / Mobile** | Tauri                                                            | Single code-base, 20 MB binaries                   |
+| **State**            | Jotai                                                            | Atomic, tiny bundle                                |
+| **Edge Runtime**     | Cloudflare Workers (Node 20 + Rust + WASM)                       | Low-latency global compute                         |
+| **Data**             | D1 (edge), Supabase PG (core), OrioleDB/TigerDB (analytics soon) | Three-tier strategy (see backend.mdc §3)           |
+| **Storage**          | Cloudflare R2                                                    | Fastest PUT/GET at edge                            |
+| **Auth**             | Auth.js v5                                                       | Provider chaining, RLS                             |
+| **CI/CD**            | GitHub Actions → Wrangler → Pages                                | Native, no Yak-shaving                             |
+| **Observability**    | Sentry, PostHog, CF Logs                                         | Single pane until in-house dashboards mature       |
+
+---
+
+## 6 Roadmap Highlights
+
+| Quarter | Shipping                                                    |
+| ------- | ----------------------------------------------------------- |
+| Q3 2025 | Supabase Realtime + YJS collab, Durable Objects MVP         |
+| Q4 2025 | Ably migration, Hyperdrive proxy, edge bucket counters      |
+| Q1 2026 | Queues for creative renders & email; OrioleDB columnar tier |
+| Q2 2026 | Desktop/iOS GA, ML models served via WASM/ONNX              |
+
+Each milestone turns bottlenecks into leverage—removing the friction between strategy and scale.
+
+---
+
+## 7 Legacy vs Current – Key Deltas
+
+| Legacy doc (2024)                  | Current (Aug 2025)                            | Reason                                |
+| ---------------------------------- | --------------------------------------------- | ------------------------------------- |
+| Single PG for all data             | Three-tier (D1 + Supabase PG + Columnar tier) | Edge latency & analytical scale       |
+| Static KV routing                  | KV _+_ Durable Objects                        | Need sub-100 ms variant re-allocation |
+| No Queues                          | Queues (fan-out, retries)                     | Reliability for pixel exports         |
+| Rust microservices outside Workers | Rust compiled to WASM inside Workers          | Lower latency, simplified deploy      |
+
+Lyberty evolves with clarity: every architecture decision compounds speed, trust, and adaptability.
+
+---
+
+## 8 Contributing
+
+1. **Read `backend.mdc`** for schema before touching any Server Action.
+2. **Check `infra.mdc`** when adding a dependency—ensure it fits cost & SLO guardrails.
+3. **PR Rules**: green tests, preview link, and update docs if you change behaviour.
+4. **Versioning**: use Conventional Commits; docs changes use _`docs:`_ prefix.
+
+_We build fast because we build clean._
+
+---
+
+## 9 Contact & Ownership
+
+| Domain             | Owner           | Slack       |
+| ------------------ | --------------- | ----------- |
+| Product & Strategy | Federico Rocchi | `@federico` |
+| Backend Logic      | Core Dev Squad  | `#backend`  |
+| Infrastructure     | Platform Ops    | `#dev-ops`  |
+
+---
+
+### Start Here →
+
+- Need product detail? open **backend.mdc**
+- Need deployment/runbook? open **infra.mdc**
+- Anything else → ping `#help-lyberty`
+
+Lyberty is for **builders who think strategically and move fearlessly.**
+When others talk, we ship—and when others stall, we scale.

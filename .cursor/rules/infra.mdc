@@ -1,0 +1,184 @@
+---
+description: infrastructure, from hosting to networking SLOs and runbooks
+alwaysApply: false
+---
+
+# Infrastructure – Hosting, Networking, SLOs & Runbooks
+
+_Last updated: 2 Aug 2025_
+
+> Complements [`backend.mdc`](../backend.mdc) (logic & DB) and [`overview.mdc`](../overview.mdc) (big‑picture).
+> **TL;DR:** Cloudflare‑first edge architecture, three‑tier data strategy, strict SLOs, and lightweight runbooks for every critical component.
+
+---
+
+## 1 Hosting Topology
+
+| Layer         | Service                            | Purpose                           | Domain           |
+| ------------- | ---------------------------------- | --------------------------------- | ---------------- |
+| Marketing     | **Cloudflare Pages (Edge Render)** | SEO pages, docs, blog             | `lyberty.ai`     |
+| Web App       | **Cloudflare Pages (Static)**      | SPA bundle + hydration            | `app.lyberty.ai` |
+| API Edge      | **Cloudflare Workers (Node 20)**   | Server Actions, REST, Webhooks    | `api.lyberty.ai` |
+| Heavy Compute | **Workers (Rust + WASM)**          | PDF, funnel compile, ML inference | —                |
+| Desktop / iOS | **Tauri**                          | Native wrapper (auto‑update)      | —                |
+
+_All assets cached via Smart Placement + Regional Prefetch where relevant._
+
+Perfect — here are the exact lines you can append right after the Hosting Topology table (i.e. after line 13 in your infra.mdc):
+
+⸻
+
+Cloudflare Pages Build Matrix
+
+apps/marketing
+
+Framework preset: Next.js
+Build command: cd apps/marketing && pnpm build
+Output directory: apps/marketing/.next
+Root directory: /
+
+Environment Variables:
+
+NODE_VERSION=18
+PNPM_VERSION=10.14.0
+NEXT_TELEMETRY_DISABLED=1
+
+Features enabled:
+• ✅ Edge Middleware
+• ✅ Server Components
+• ✅ Image Optimization
+• ✅ API Routes
+• ✅ Server Actions
+• ✅ Dynamic Routes
+• ✅ SEO & Social Sharing
+
+⸻
+
+apps/web
+
+Framework preset: Next.js
+Build command: cd apps/web && pnpm build
+Output directory: apps/web/out
+Root directory: /
+
+Environment Variables:
+
+NODE_VERSION=18
+PNPM_VERSION=10.14.0
+NEXT_TELEMETRY_DISABLED=1
+
+Features enabled:
+• ✅ Static Export (for Tauri wrapping)
+• ✅ Client-side Routing & State
+• ✅ Offline Support
+• ✅ Native App Performance
+
+⸻
+
+💡 These settings are mirrored in GitHub Actions and Cloudflare Pages UI; use them to debug deploy mismatches or replicate production locally.
+
+---
+
+## 2 Networking & Security
+
+- **DNS:** Cloudflare, CNAME‑flattened apex.
+- **SSL:** Universal SSL (ECDSA certs, TLS 1.3).
+- **WAF & Bot:** Cloudflare Managed Rules + Bot Management (Business plan).
+- **Argo Tunnel (optional):** admin tools under Zero‑Trust.
+
+### Reserved Sub‑domains
+
+`www` marketing • `app` SPA • `api` JSON/Edge • `cdn` assets/R2 • `dev` previews.
+
+---
+
+## 3 SLOs (Service‑Level Objectives)
+
+| Component      | Metric             | Target         | Alert at    |
+| -------------- | ------------------ | -------------- | ----------- |
+| Marketing TTFB | <50 ms global p95  | PageSpeed ⩾95  | p95 >80 ms  |
+| API Latency    | <150 ms global p95 | Server Actions | p95 >250 ms |
+| Ingest Lag     | Event → Dest       | <1 s p95       | >2 s        |
+| Error Rate     | 5xx % of req       | <0.2 %         | >0.5 %      |
+| R2 PUT p95     | <80 ms             | asset upload   | >120 ms     |
+| D1 Write       | <5 ms in‑POP       | temp_event     | >20 ms      |
+| Supabase Write | <120 ms p95        | core tables    | >200 ms     |
+
+Alerts pipe to `#alerts` Slack via Sentry + CF Logpush.
+
+---
+
+## 4 Runbooks
+
+### 4.1 Incident Response (P0)
+
+1. **PageOps** receives Slack “🔥 P0” from Sentry.
+2. Check Cloudflare Analytics for spike / WAF blocks.
+3. Roll back Pages to previous deployment (`pages rollback <id>`).
+4. If Workers failing → `wrangler tail --triggers exception`.
+5. Mitigate within 30 min; post‑mortem in 24 h.
+
+### 4.2 Durable Objects Cut‑over
+
+Trigger: RPM >50 k OR routing re‑allocation latency breach.
+
+1. Deploy new DO class `VariantBucket`.
+2. Replay last 6 h variant assignments from D1 → DO KV.
+3. Gradually shift 10 % traffic via feature flag.
+4. Monitor allocation accuracy.
+5. Complete 100 % in 60 min; deprecate old KV path.
+
+### 4.3 Hyperdrive Activation
+
+Trigger: Supabase p99 write >200 ms across 3 geographic cohorts.
+
+1. `wrangler hyperdrive create lyberty‐pg`.
+2. Update env var `DATABASE_URL_EDGE`.
+3. Run smoke tests via preview env.
+4. Flip production flag; monitor write latency.
+
+### 4.4 Queue Scaling
+
+Trigger: creative render job >30 s OR daily jobs >500.
+
+1. Create Queue `creative‐jobs` with max attempts = 5.
+2. Move Worker logic into consumer (rust/wasm as needed).
+3. Add DLQ (dead‑letter) alert to PostHog.
+4. Enable auto‑scaling concurrency = 100.
+
+### 4.5 OrioleDB / TigerDB Migration
+
+Trigger: events >5 M/day or analytical query >2 s p95.
+
+1. Provision OrioleDB plug‑in on PG read‑replica **or** TigerDB 7TS external.
+2. Copy last 90 days events via `COPY` → S3 → import.
+3. Shadow queries in background; compare checksums.
+4. Switch OLAP endpoints; update Grafana/PostHog source.
+
+---
+
+## 5 Secrets & Config Rotation
+
+| Scope           | Tool               | Rotation                          |
+| --------------- | ------------------ | --------------------------------- |
+| Workers Runtime | CF Secrets         | monthly or on credential leak     |
+| Build‑time      | GitHub Env Secrets | daily OIDC token refresh          |
+| Local           | `.env`             | dev responsibility                |
+| KV Flags        | Cloudflare KV      | live toggle (recorded in PostHog) |
+
+---
+
+## 6 Cost Guardrails (Aug 2025 prices)
+
+| Layer   | Free tier        | Watch‑point                  |
+| ------- | ---------------- | ---------------------------- |
+| Workers | 100 k/day        | >10 M/mo – add cache headers |
+| D1      | 25 k writes/day  | >500 k – shard or index      |
+| R2      | 10 GB            | >1 TB – cold tier            |
+| Queues  | 100 k msgs first | >5 M – renegotiate plan      |
+
+Monthly cost dashboard in PostHog; threshold alerts to `#finance`.
+
+---
+
+**Principle:** _Ship fast, scale precisely._ Every runbook is a one‑day switch, every SLO is measurable, and every component ties back to the core promise: **leverage without latency**.

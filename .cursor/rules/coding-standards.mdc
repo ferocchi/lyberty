@@ -1,5 +1,5 @@
 ---
-globs: nextjs-website/*
+globs: apps/marketing/*,apps/web/*
 alwaysApply: false
 ---
 
