@@ -6,8 +6,8 @@ Your development environment is now set up and running! Here's what's currently 
 
 ### ✅ **Currently Running:**
 
-- **Web App**: http://localhost:3000 (Next.js 15)
-- **Marketing Site**: http://localhost:3001 (Next.js 15)
+- **Marketing Site**: http://localhost:3001 (Next.js 15 with full edge features)
+- **Web App**: http://localhost:3000 (Next.js 15 with static export for Tauri)
 - **Dependencies**: All installed via pnpm
 - **Monorepo**: Turborepo configured and working
 
@@ -18,8 +18,8 @@ Your development environment is now set up and running! Here's what's currently 
 pnpm turbo dev
 
 # Start specific apps
-pnpm turbo dev --filter=web          # Web app only
 pnpm turbo dev --filter=marketing    # Marketing site only
+pnpm turbo dev --filter=web          # Web app only
 
 # Build all projects
 pnpm turbo build
@@ -36,10 +36,10 @@ pnpm turbo test
 ```
 lyberty/
 ├── apps/
-│   ├── web/              # Main Next.js 15 app (React/TS/Jotai)
-│   ├── marketing/        # Marketing/landing pages (Next.js 15)
-│   ├── desktop/          # Tauri desktop app
-│   └── ios-shell/        # Tauri iOS app
+│   ├── marketing/        # Marketing site (Next.js 15 + full edge features)
+│   ├── web/              # Main product app (Next.js 15 + static export)
+│   ├── desktop/          # Tauri desktop wrapper
+│   └── ios-shell/        # Tauri iOS wrapper
 ├── packages/
 │   ├── ui/              # Design system components
 │   ├── core/            # Domain logic
@@ -51,6 +51,28 @@ lyberty/
 │   └── export-service/  # Rust + Axum service
 └── infra/               # Infrastructure as Code
 ```
+
+## 🎯 **App Purposes**
+
+### **Marketing Site (apps/marketing)**
+
+- **Purpose**: SEO, lead generation, marketing presence
+- **Features**: Full Next.js 15 capabilities (edge middleware, server components, image optimization)
+- **Deployment**: Cloudflare Pages with full edge features
+- **URL**: lyberty.ai
+
+### **Main Web App (apps/web)**
+
+- **Purpose**: Main product application
+- **Features**: Static export for Tauri desktop/iOS wrapping
+- **Deployment**: Cloudflare Pages (static export)
+- **URL**: app.lyberty.ai (future)
+
+### **Desktop/iOS Apps**
+
+- **Purpose**: Native wrappers around the main web app
+- **Features**: Tauri desktop and iOS applications
+- **Distribution**: App stores, direct downloads
 
 ## 🔧 **Next Steps to Complete Setup:**
 
@@ -87,8 +109,8 @@ Create `.env.local` files for each app as needed.
 
 ## 🌐 **Accessing Your Apps:**
 
-- **Web App**: http://localhost:3000
 - **Marketing Site**: http://localhost:3001
+- **Web App**: http://localhost:3000
 - **Desktop App**: Run `pnpm tauri dev` in `apps/desktop`
 
 ## 🐛 **Troubleshooting:**
@@ -127,8 +149,8 @@ rustup target add wasm32-unknown-unknown
 
 ## 🎯 **What's Ready to Use:**
 
-✅ **Web App**: Fully configured Next.js 15 with TypeScript  
-✅ **Marketing Site**: Static site generation ready (Next.js 15)  
+✅ **Marketing Site**: Fully configured Next.js 15 with full edge features  
+✅ **Web App**: Next.js 15 with static export for Tauri  
 ✅ **Monorepo**: Turborepo with caching and parallel builds  
 ✅ **Package Management**: pnpm workspaces configured  
 ✅ **TypeScript**: Configured across all packages
@@ -145,8 +167,8 @@ rustup target add wasm32-unknown-unknown
 
 Your development environment is working. You can now:
 
-- Edit the web app at `apps/web/src/`
 - Edit the marketing site at `apps/marketing/src/`
+- Edit the web app at `apps/web/src/`
 - Add new packages in the `packages/` directory
 - Set up additional services as needed
 

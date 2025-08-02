@@ -7,10 +7,10 @@ This is a monorepo setup for the Lyberty project, allowing development and deplo
 Based on the specified monorepo-first architecture:
 
 - **apps/**: Runnable entry-points
-  - web/: Next.js 15 app (React/TS/Jotai)
-  - ios-shell/: Tauri + SwiftUI for iOS
-  - desktop/: Tauri for desktop (Mac/Win/Linux)
-  - marketing/: Static Next.js 15 site
+  - marketing/: Next.js 15 app (React/TS) - SEO-optimized marketing site with full edge capabilities
+  - web/: Next.js 15 app (React/TS/Jotai) - Main product app with static export for Tauri wrapping
+  - ios-shell/: Tauri + SwiftUI for iOS - Native iOS wrapper around web app
+  - desktop/: Tauri for desktop (Mac/Win/Linux) - Native desktop wrapper around web app
 - **services/**: Deployable back-end
   - auth-worker/: Cloudflare Worker
   - export-service/: Rust + Axum for Fastly
@@ -28,19 +28,20 @@ Based on the specified monorepo-first architecture:
 ```
 lyberty/
 ├── apps/
-│   ├── web/
+│   ├── marketing/        # Marketing site (Next.js 15 + full edge features)
 │   │   ├── src/
 │   │   ├── next.config.js
 │   │   ├── tsconfig.json
 │   │   └── package.json
-│   ├── desktop/
+│   ├── web/              # Main product app (Next.js 15 + static export)
+│   │   ├── src/
+│   │   ├── next.config.js
+│   │   ├── tsconfig.json
+│   │   └── package.json
+│   ├── desktop/          # Tauri desktop wrapper
 │   │   └── src-tauri/
-│   ├── ios-shell/
-│   │   └── src-tauri/
-│   └── marketing/
-│       ├── public/
-│       ├── next.config.js
-│       └── package.json
+│   └── ios-shell/        # Tauri iOS wrapper
+│       └── src-tauri/
 ├── services/
 │   ├── auth-worker/
 │   │   └── worker.js
@@ -68,6 +69,29 @@ lyberty/
 └── README.md
 ```
 
+## Deployment Strategy
+
+### Marketing Site (apps/marketing)
+
+- **Platform**: Cloudflare Pages
+- **Features**: Full Next.js 15 capabilities (edge middleware, server components, image optimization)
+- **Purpose**: SEO, lead generation, marketing presence
+- **URL**: lyberty.ai
+
+### Main Web App (apps/web)
+
+- **Platform**: Cloudflare Pages (static export)
+- **Features**: Static export for Tauri wrapping
+- **Purpose**: Main product application
+- **URL**: app.lyberty.ai (future)
+
+### Desktop/iOS Apps
+
+- **Platform**: Tauri (desktop) + Tauri for iOS
+- **Features**: Native wrappers around static web app
+- **Purpose**: Native desktop and mobile applications
+- **Distribution**: App stores, direct downloads
+
 ## Advanced Setup
 
 - For remote caching: Configure Turborepo with your Vercel account (see turbo.json).
@@ -78,7 +102,9 @@ lyberty/
 
 - Lint all: `pnpm turbo lint`
 - Test affected: `pnpm turbo test --since=main`
-- Build and export marketing: `cd apps/marketing ; pnpm build ; pnpm export`
+- Build marketing: `cd apps/marketing ; pnpm build`
+- Build web app: `cd apps/web ; pnpm build`
+- Build desktop: `cd apps/desktop ; pnpm tauri build`
 
 ## Contributing Guidelines
 
@@ -99,7 +125,7 @@ For full architecture details, see docs/monorepo-guide.md. For coding rules, see
 
 Below is a monorepo-first architecture that lets you
 • ship a Web app (Next .js), a native iOS app in Swift/Tauri, desktop binaries, and serverless back-end services from one place,
-• grant per-folder or per-package access so you can hand off just a micro-service, a marketing site, or a single “agent” without exposing the rest of the source, and
+• grant per-folder or per-package access so you can hand off just a micro-service, a marketing site, or a single "agent" without exposing the rest of the source, and
 • keep builds fast with remote caching and fine-grained CI.
 
 ⸻
@@ -114,7 +140,7 @@ They get exactly one component, no monorepo leakage.
 
 ⸻
 
-2 Project boundaries & access control
+2 Project boundaries & access control
 
 Layer How to share / withhold
 Public SDKs / agents Located in packages/. Publish as versioned npm packages; consumers never see other internals.
@@ -124,7 +150,7 @@ iOS shell apps/ios-shell is a standalone Xcode workspace that imports the shared
 
 ⸻
 
-3 Cross-platform strategy
+3 Cross-platform strategy
 
 Shared engine
 • Rust crate lives in pkg-rust/formula-engine.
@@ -136,7 +162,7 @@ iOS shell
 • You keep one JS/React UI; only native-API heavy features (e.g. Core ML, ARKit) become Swift plugins.
 
 Web app
-• Full Next .js 15 with Server Actions for lightweight edge code.
+• Full Next .js 15 with static export for Tauri wrapping.
 • Uses Jotai atoms for local state — minimal bundle cost, fine for concurrent React.
 
 When you do need pure Swift
@@ -144,17 +170,17 @@ When you do need pure Swift
 
 ⸻
 
-4 Runtime placement guide
+4 Runtime placement guide
 
 Concern / task Where to run it Why
-< 50 ms CPU, small payload (CRUD, presence ping) Next 13 Server Action on Cloudflare Pages Functions Lives right beside the React page; no extra R/TT.
+< 50 ms CPU, small payload (CRUD, presence ping) Next 15 Server Action on Cloudflare Pages Functions Lives right beside the React page; no extra R/TT.
 Auth.js callback / refresh Cloudflare Worker Official Auth.js Edge guide targets Workers; zero-cold-start isolates (≈ 5 ms) ￼.
 Spreadsheet export (10 k rows XLSX) Rust micro-service on Fastly Compute@Edge WASM sandbox starts in ≈ 35 µs and scales 100 × faster than container-based FaaS ￼.
 3rd-party webhook fan-out, cron jobs Deno Deploy / Workers Cron Long-lived, isolate-friendly, no cold-start fees.
 
 ⸻
 
-5 Supabase vs PlanetScale vs Neon (mid-2025 snapshot)
+5 Supabase vs PlanetScale vs Neon (mid-2025 snapshot)
 
 Provider Hot QPS p99 hot-query latency Cold-start penalty First paid tier DX notes
 Supabase (OrioleDB beta) **~ 37 k** ￼ 4-8 ms n/a (always-on) $25 /mo Auth, Storage, RLS, Realtime in one console.
@@ -165,18 +191,18 @@ For sustained OLTP and built-in Realtime, stick with Supabase; flip a feature fl
 
 ⸻
 
-6 Edge host reality check (TTFB, cold-start, DX)
+6 Edge host reality check (TTFB, cold-start, DX)
 
 Platform Median cold-start US-E TTFB (edge fn) Cheapest paid tier
 Cloudflare Pages + Workers < 5 ms isolates → zero cold-starts ￼ 75 ms US-E static TTFB ￼ $5/mo (10 M req)
 Vercel Edge Network 100-400 ms (Fluid reduces but still triple CF) ￼ 105 ms (US-E Node fn) ￼ $20 /seat
-Fastly Compute@Edge ≈ 35 µs WASM sandbox, marketed “100 × faster” than container FaaS ￼ 20-40 ms median (customer tests) ￼ $50 min
+Fastly Compute@Edge ≈ 35 µs WASM sandbox, marketed "100 × faster" than container FaaS ￼ 20-40 ms median (customer tests) ￼ $50 min
 
 Pick order: Cloudflare for raw speed + cost, Vercel only if Next.js preview flows are worth the premium, Fastly for Rust-heavy specialty services.
 
 ⸻
 
-7 Publishing / sharing modules safely
+7 Publishing / sharing modules safely
 
 Need Technique
 Share UI kit with a client project npm publish --access restricted @your/ui (package in packages/ui)
@@ -186,13 +212,13 @@ Hire contractor for marketing site only CODEOWNERS on apps/marketing/\*\*; GitHu
 
 ⸻
 
-8 Putting it in CI
+8 Putting it in CI
 • Matrix builds—turbo run build --filter=apps/web… ensures only affected artifacts build.
 • Publish step in GitHub Actions reads package.json{"publishConfig.access"} to decide npm vs GHCR push.
 • Security—git secrets scan + Provenance attestations on each build artifact.
 
 ⸻
 
-TL-DR workflow 1. Develop everything in one Turborepo. 2. Edge deploy (Cloudflare Pages + Workers) for the Web; same codebase, next export feeds Tauri 2 for desktop-and-mobile shells. 3. Swift is added only where you need frameworks Web can’t reach; done through Tauri mobile plugin scaffold so your core UI stays React/TS. 4. Share any slice—micro-service, agent, or UI kit—just by publishing that folder; monorepo boundaries + CI enforce no accidental leaks.
+TL-DR workflow 1. Develop everything in one Turborepo. 2. Edge deploy (Cloudflare Pages + Workers) for the Web; same codebase, next export feeds Tauri 2 for desktop-and-mobile shells. 3. Swift is added only where you need frameworks Web can't reach; done through Tauri mobile plugin scaffold so your core UI stays React/TS. 4. Share any slice—micro-service, agent, or UI kit—just by publishing that folder; monorepo boundaries + CI enforce no accidental leaks.
 
-This setup keeps code velocity high, lets you “go native” where it actually pays off, and still gives partners a clean, minimal slice of code when you need to collaborate or outsource.
+This setup keeps code velocity high, lets you "go native" where it actually pays off, and still gives partners a clean, minimal slice of code when you need to collaborate or outsource.
